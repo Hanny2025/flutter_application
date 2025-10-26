@@ -13,21 +13,21 @@ class _Browse_LecturerState extends State<Browse_Lecturer> {
   final List<Map<String, String>> rooms = [
     {
       "name": "Deluxe Twin Room",
-      "image":"Assets/images/login.jpg",
+      "image":"assets/images/login.jpg",
       "desc": "2 single beds • breakfast",
       "max": "Max 2 adults",
       "price": "900 bahts/day"
     },
     {
       "name": "King Deluxe Room",
-      "image":"Assets/images/login.jpg",
+      "image":"assets/images/login.jpg",
       "desc": "1 king bed • breakfast • air",
       "max": "Max 1 adult",
       "price": "650 bahts/day"
     },
     {
       "name": "Family Deluxe Room",
-      "image":"Assets/images/login.jpg",
+      "image":"assets/images/login.jpg",
       "desc": "1 queen bed • 1 single bed • breakfast",
       "max": "Max 3 adults",
       "price": "1,250 bahts/day"
