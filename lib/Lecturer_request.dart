@@ -1,134 +1,165 @@
 import 'package:flutter/material.dart';
-class RequestDetailPage extends StatelessWidget {
-  final Map<String, String> request;
+import 'Lecturer_Check.dart';
+
+class Lecturer_req extends StatefulWidget {
+  const Lecturer_req({super.key});
+
+  @override
+  State<Lecturer_req> createState() => _Lecturer_reqState();
+}
+
+class _Lecturer_reqState extends State<Lecturer_req> {
   static const Color Background_head = Color.fromARGB(255, 0, 62, 195);
 
-  const RequestDetailPage({super.key, required this.request});
+  final List<Map<String, dynamic>> requests = [
+    {
+      "roomName": "Family Deluxe Room",
+      "image": "assets/images/login.jpg",
+      "price": "1,250 bahts/day",
+      "username": "Username 1",
+      "time": "08:00 - 10:00",
+      "date": "Apr 1, 2025",
+    },
+    {
+      "roomName": "King Deluxe Room",
+      "image": "assets/images/login.jpg",
+      "price": "650 bahts/day",
+      "username": "Username 2",
+      "time": "15:00 - 17:00",
+      "date": "Apr 1, 2025",
+    },
+    {
+      "roomName": "Deluxe Twin Room",
+      "image": "assets/images/login.jpg",
+      "price": "800 bahts/day",
+      "username": "Username 3",
+      "time": "10:00 - 12:00",
+      "date": "Apr 1, 2025",
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Request Detail'),
-        backgroundColor: Background_head,
         centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.asset(
-                request["image"]!,
-                width: double.infinity,
-                height: 200,
-                fit: BoxFit.cover,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              request["roomName"]!,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _DetailRow(
-              icon: Icons.access_time,
-              label: 'Time',
-              value: request["time"]!,
-            ),
-            _DetailRow(
-              icon: Icons.calendar_today,
-              label: 'Date',
-              value: request["date"]!,
-            ),
-            _DetailRow(
-              icon: Icons.person_outline,
-              label: 'Customer',
-              value: request["username"]!,
-            ),
-            _DetailRow(
-              icon: Icons.attach_money,
-              label: 'Price',
-              value: request["price"]!,
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // Handle approve
-                    Navigator.pop(context);
-                  },
-                  icon: const Icon(Icons.check_circle_outline),
-                  label: const Text('Approve'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // Handle reject
-                    Navigator.pop(context);
-                  },
-                  icon: const Icon(Icons.cancel_outlined),
-                  label: const Text('Reject'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ],
+        title: const Text(
+          'Request customer',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
+        backgroundColor: Background_head,
       ),
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _DetailRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
-          const SizedBox(width: 12),
-          Text(
-            '$label:',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
+      body: ListView.builder(
+        padding: const EdgeInsets.all(12),
+        itemCount: requests.length,
+        itemBuilder: (context, index) {
+          final request = requests[index];
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CheckPage(requestData: request),
+                ),
+              );
+            },
+            child: Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    // Room image
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.asset(
+                        request["image"]!,
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    
+                    // Room details
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            request["roomName"]!,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            request["price"]!,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                request["username"]!,
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                              Text(
+                                request["date"]!,
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            request["time"]!,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Arrow icon
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: Colors.grey[400],
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          );
+        },
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 1,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.event_available), label: 'Requested'),
+          BottomNavigationBarItem(icon: Icon(Icons.check), label: 'Check'),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
         ],
+        selectedItemColor: Background_head,
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
       ),
     );
   }
 }
+
+// Add this class in a new file called check_page.dart
