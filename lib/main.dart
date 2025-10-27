@@ -5,6 +5,6 @@ import 'Lecturer_request.dart';
 import 'Login_Lecturer.dart';
 void main() {
   runApp((MaterialApp(
-    home:Lecturer_req(),
+    home:LoginLecturer(),
   )));
 }
