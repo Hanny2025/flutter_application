@@ -23,11 +23,7 @@ class _LoginLecturerState extends State<LoginLecturer> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 60),
-              Image.asset(
-                'assets/images/room.jpg',
-                height: 200,
-                fit: BoxFit.cover,
-              ),
+              Image.asset('assets/images/room.jpg',height: 200,fit: BoxFit.cover,),
               const SizedBox(height: 40),
               const Text(
                 'Welcome Back',
