@@ -38,7 +38,11 @@ class CheckPage extends StatelessWidget {
       ...entry,
       'actionAt': DateTime.now().toIso8601String(),
     };
-    Navigator.pushReplacementNamed(context, '/history', arguments: historyEntry);
+    Navigator.pushReplacementNamed(
+      context,
+      '/history',
+      arguments: historyEntry,
+    );
   }
 
   @override
@@ -46,11 +50,14 @@ class CheckPage extends StatelessWidget {
     final data = requestData;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Check status',style: TextStyle(
+        title: const Text(
+          'Check status',
+          style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Colors.white,
-          ),),
+          ),
+        ),
         backgroundColor: const Color.fromARGB(255, 0, 62, 195),
         centerTitle: true,
       ),
@@ -90,13 +97,16 @@ class CheckPage extends StatelessWidget {
                                     Text(
                                       item['roomName']!,
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.bold),
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       item['price']!,
                                       style: TextStyle(
-                                          color: Colors.grey[700], fontSize: 13),
+                                        color: Colors.grey[700],
+                                        fontSize: 13,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -151,7 +161,12 @@ class CheckPage extends StatelessWidget {
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.redAccent.shade200,
-                                  foregroundColor: const Color.fromARGB(255, 255, 255, 255),
+                                  foregroundColor: const Color.fromARGB(
+                                    255,
+                                    255,
+                                    255,
+                                    255,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(20),
                                   ),
