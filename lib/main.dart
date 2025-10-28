@@ -4,6 +4,8 @@ import 'package:flutter_application/browse_room.dart';
 import 'package:flutter_application/manage.dart';
 import 'package:flutter_application/addroom.dart';
 import 'package:flutter_application/editroom.dart';
+import 'package:flutter_application/history.dart';
+import 'package:flutter_application/dashboard.dart';
 
 void main() {
   runApp(const MyApp());
@@ -33,6 +35,8 @@ class MyApp extends StatelessWidget {
         '/manage': (context) => const ManageBooking(),
         '/addRoom': (context) => const AddRoomScreen(),
         '/editRoom': (context) => const EditRoomScreen(),
+        '/history': (context) => const BookingHistoryScreen(),
+        '/dashboard': (context) => const DashboardScreen(),
       },
     );
   }

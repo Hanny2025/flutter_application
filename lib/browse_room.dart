@@ -42,8 +42,8 @@ class _BrowseRoomState extends State<BrowseRoom> {
       maxText: 'Max 2 adult',
       price: '800 bahts/day',
       slots: [
-        (time: '08:00 - 10:00', status: 'Free',     color: Colors.green),
-        (time: '10:00 - 12:00', status: 'Pending',  color: Colors.orange),
+        (time: '08:00 - 10:00', status: 'Free', color: Colors.green),
+        (time: '10:00 - 12:00', status: 'Pending', color: Colors.orange),
         (time: '13:00 - 15:00', status: 'Reserved', color: Colors.red),
         (time: '15:00 - 17:00', status: 'Disabled', color: Colors.grey),
       ],
@@ -55,8 +55,8 @@ class _BrowseRoomState extends State<BrowseRoom> {
       maxText: 'Max 1 adult',
       price: '650 bahts/day',
       slots: [
-        (time: '08:00 - 10:00', status: 'Free',     color: Colors.green),
-        (time: '10:00 - 12:00', status: 'Free',     color: Colors.green),
+        (time: '08:00 - 10:00', status: 'Free', color: Colors.green),
+        (time: '10:00 - 12:00', status: 'Free', color: Colors.green),
         (time: '13:00 - 15:00', status: 'Reserved', color: Colors.red),
         (time: '15:00 - 17:00', status: 'Disabled', color: Colors.grey),
       ],
@@ -68,8 +68,8 @@ class _BrowseRoomState extends State<BrowseRoom> {
       maxText: 'Max 3 adults',
       price: '1,250 bahts/day',
       slots: [
-        (time: '08:00 - 10:00', status: 'Free',     color: Colors.green),
-        (time: '10:00 - 12:00', status: 'Pending',  color: Colors.orange),
+        (time: '08:00 - 10:00', status: 'Free', color: Colors.green),
+        (time: '10:00 - 12:00', status: 'Pending', color: Colors.orange),
         (time: '13:00 - 15:00', status: 'Reserved', color: Colors.red),
         (time: '15:00 - 17:00', status: 'Disabled', color: Colors.grey),
       ],
@@ -91,6 +91,7 @@ class _BrowseRoomState extends State<BrowseRoom> {
         break;
       case 3:
         // TODO: ไปหน้า History
+        Navigator.pushReplacementNamed(context, '/history');
         break;
       case 4:
         // TODO: ไปหน้า User
@@ -126,11 +127,23 @@ class _BrowseRoomState extends State<BrowseRoom> {
         type: BottomNavigationBarType.fixed,
         onTap: _onNavTap,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.assignment_outlined), label: 'Requested'),
-          BottomNavigationBarItem(icon: Icon(Icons.check_box_outlined), label: 'Check'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.assignment_outlined),
+            label: 'Requested',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.check_box_outlined),
+            label: 'Check',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'User'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            label: 'User',
+          ),
         ],
       ),
     );
@@ -174,11 +187,18 @@ class _BrowseRoomState extends State<BrowseRoom> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(r.title,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 16)),
+                            Text(
+                              r.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
                             const SizedBox(height: 4),
-                            Text(r.subtitle, style: const TextStyle(fontSize: 13)),
+                            Text(
+                              r.subtitle,
+                              style: const TextStyle(fontSize: 13),
+                            ),
                           ],
                         ),
                       ),
@@ -190,14 +210,17 @@ class _BrowseRoomState extends State<BrowseRoom> {
                           Text(
                             r.price,
                             style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 13),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
                           ),
                         ],
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  for (final s in r.slots) _buildTimeSlot(s.time, s.status, s.color),
+                  for (final s in r.slots)
+                    _buildTimeSlot(s.time, s.status, s.color),
                 ],
               ),
             ),
@@ -214,11 +237,18 @@ Widget _buildTimeSlot(String time, String status, Color statusColor) {
     padding: const EdgeInsets.symmetric(vertical: 2.0),
     child: Row(
       children: [
-        SizedBox(width: 90, child: Text(time, style: const TextStyle(fontSize: 12))),
+        SizedBox(
+          width: 90,
+          child: Text(time, style: const TextStyle(fontSize: 12)),
+        ),
         const SizedBox(width: 8),
         Text(
           status,
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: statusColor,
+          ),
         ),
       ],
     ),
