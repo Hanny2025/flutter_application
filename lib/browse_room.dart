@@ -95,7 +95,7 @@ class _BrowseRoomState extends State<BrowseRoom> {
         break;
       case 4:
         // TODO: ไปหน้า User
-        Navigator.pushReplacementNamed(context, '/user');
+        Navigator.pushReplacementNamed(context, '/User');
         break;
     }
   }

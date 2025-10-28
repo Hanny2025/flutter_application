@@ -21,26 +21,25 @@ class _LoginState extends State<Login> {
     super.dispose();
   }
 
- Future<void> _onLogin() async {
-  if (!_formKey.currentState!.validate()) return;
-  setState(() => _loading = true);
-  await Future.delayed(const Duration(milliseconds: 900));
+  Future<void> _onLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _loading = true);
+    await Future.delayed(const Duration(milliseconds: 900));
 
-  if (!mounted) return;
-  setState(() => _loading = false);
+    if (!mounted) return;
+    setState(() => _loading = false);
 
-  // ✅ นำทางไปหน้า BrowseRoom
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(builder: (context) => const BrowseRoom()),
-  );
-}
-
+    // ✅ นำทางไปหน้า BrowseRoom
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const BrowseRoom()),
+    );
+  }
 
   OutlineInputBorder _rounded([Color? color]) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: color ?? Colors.black26, width: 1),
-      );
+    borderRadius: BorderRadius.circular(16),
+    borderSide: BorderSide(color: color ?? Colors.black26, width: 1),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -81,11 +80,8 @@ class _LoginState extends State<Login> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Please log in to continue',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.black54,
-                    ),
+                    'Please login to continue',
+                    style: TextStyle(fontSize: 16, color: Colors.black54),
                   ),
 
                   const SizedBox(height: 28),
@@ -93,20 +89,26 @@ class _LoginState extends State<Login> {
                   // Username
                   TextFormField(
                     controller: _userCtrl,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Enter username' : null,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Enter username'
+                        : null,
                     style: const TextStyle(fontSize: 16),
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.person_outline),
                       labelText: 'Username',
-                      labelStyle:
-                          const TextStyle(color: Colors.black54, fontSize: 16),
-                      contentPadding:
-                          const EdgeInsets.symmetric(vertical: 18, horizontal: 14),
+                      labelStyle: const TextStyle(
+                        color: Colors.black54,
+                        fontSize: 16,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 18,
+                        horizontal: 14,
+                      ),
                       border: _rounded(),
                       enabledBorder: _rounded(),
-                      focusedBorder:
-                          _rounded(const Color(0xFF4A78F6)), // โทนน้ำเงินปุ่ม
+                      focusedBorder: _rounded(
+                        const Color(0xFF4A78F6),
+                      ), // โทนน้ำเงินปุ่ม
                     ),
                   ),
 
@@ -122,22 +124,27 @@ class _LoginState extends State<Login> {
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.lock_outline),
                       labelText: 'Password',
-                      labelStyle:
-                          const TextStyle(color: Colors.black54, fontSize: 16),
+                      labelStyle: const TextStyle(
+                        color: Colors.black54,
+                        fontSize: 16,
+                      ),
                       suffixIcon: IconButton(
                         onPressed: () => setState(() => _obscure = !_obscure),
                         icon: Icon(
-                            _obscure ? Icons.visibility_off : Icons.visibility),
+                          _obscure ? Icons.visibility_off : Icons.visibility,
+                        ),
                       ),
-                      contentPadding:
-                          const EdgeInsets.symmetric(vertical: 18, horizontal: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 18,
+                        horizontal: 14,
+                      ),
                       border: _rounded(),
                       enabledBorder: _rounded(),
                       focusedBorder: _rounded(const Color(0xFF4A78F6)),
                     ),
                   ),
 
-                  const SizedBox(height: 100),
+                  const SizedBox(height: 40),
 
                   // ปุ่ม login สีน้ำเงิน เต็มความกว้าง มุมโค้งใหญ่
                   SizedBox(
@@ -159,10 +166,7 @@ class _LoginState extends State<Login> {
                               height: 22,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text(
-                              'login',
-                              style: TextStyle(fontSize: 18),
-                            ),
+                          : const Text('login', style: TextStyle(fontSize: 18)),
                     ),
                   ),
 
@@ -172,7 +176,11 @@ class _LoginState extends State<Login> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text("Don't have an account? "),
+                      const Text(
+                        "Don't have an account? ",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      const SizedBox(width: 10), // 👈 เพิ่มระยะห่างเล็กน้อย
                       GestureDetector(
                         onTap: () {
                           // TODO: ไปหน้า Sign up
@@ -196,5 +204,5 @@ class _LoginState extends State<Login> {
         ),
       ),
     );
-    }
+  }
 }
