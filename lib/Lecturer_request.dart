@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'Lecturer_Check.dart';
+import 'BottomNav.dart';
+
 
 class Lecturer_req extends StatefulWidget {
   const Lecturer_req({super.key});
@@ -144,19 +146,9 @@ class _Lecturer_reqState extends State<Lecturer_req> {
           );
         },
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.event_available), label: 'Requested'),
-          BottomNavigationBarItem(icon: Icon(Icons.check), label: 'Check'),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
-        ],
-        selectedItemColor: Background_head,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
+      bottomNavigationBar: const Padding(
+        padding: EdgeInsets.only(bottom: 0),
+        child: AppBottomNavigationBar(currentIndex: 0),
       ),
     );
   }

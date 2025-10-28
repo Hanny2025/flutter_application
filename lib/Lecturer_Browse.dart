@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'Lecturer_request.dart';
+import 'package:flutter/widgets.dart';
+import 'BottomNav.dart';
 class Browse_Lecturer extends StatefulWidget {
   const Browse_Lecturer({super.key});
 
@@ -176,53 +177,9 @@ class _Browse_LecturerState extends State<Browse_Lecturer> {
           );
         },
       ),
-      bottomNavigationBar: BottomNavigationBar(
-      //   currentIndex: 0,
-      //   onTap: (index) {
-      //   switch (index) {
-      //       case 0:
-      //         Navigator.pushReplacement(
-      //           context,
-      //           MaterialPageRoute(builder: (context) => const Browse_Lecturer()),
-      //         );
-      //         break;
-      //       case 1:
-      //         Navigator.pushReplacement(
-      //           context,
-      //           MaterialPageRoute(builder: (context) => const Lecturer_req()),
-      //         );
-      //         break;
-      //       //case 2:
-      //         Navigator.pushReplacement(
-      //           context,
-      //           //MaterialPageRoute(builder: (context) => const Check_Page()),
-      //         );
-      //         break;
-      //      // case 3:
-      //         Navigator.pushReplacement(
-      //           context,
-      //           //MaterialPageRoute(builder: (context) => const History_Page()),
-      //         );
-      //         break;
-      //      // case 4:
-      //         Navigator.pushReplacement(
-      //           context,
-      //           //MaterialPageRoute(builder: (context) => const User_Page()),
-      //         );
-      //         break;
-      //   }
-      //   },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.event_available), label: 'Requested'),
-          BottomNavigationBarItem(icon: Icon(Icons.check), label: 'Check'),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
-        ],
-        selectedItemColor: Background_head,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
+        bottomNavigationBar: const Padding(
+        padding: EdgeInsets.only(bottom: 0),
+        child: AppBottomNavigationBar(currentIndex: 0),
       ),
     );
   }

@@ -21,9 +21,22 @@ class _LoginLecturerState extends State<LoginLecturer> {
           padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
+
             children: [
               const SizedBox(height: 60),
-              Image.asset('assets/images/room.jpg',height: 200,fit: BoxFit.cover,),
+
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+                child: Image.asset(
+                  'assets/images/room.jpg',
+                  height: 250,
+                  width: 380,
+                  fit: BoxFit.cover,
+                ),
+              ),
               const SizedBox(height: 40),
               const Text(
                 'Welcome Back',
@@ -37,10 +50,7 @@ class _LoginLecturerState extends State<LoginLecturer> {
               const SizedBox(height: 8),
               const Text(
                 'Please log in to continue',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
@@ -71,7 +81,7 @@ class _LoginLecturerState extends State<LoginLecturer> {
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _isPasswordVisible 
+                      _isPasswordVisible
                           ? Icons.visibility_off
                           : Icons.visibility,
                     ),
@@ -97,13 +107,11 @@ class _LoginLecturerState extends State<LoginLecturer> {
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {
-                  // Add login logic here
-                  Navigator.pushReplacement(
+                  // หลังตรวจสอบ credential สำเร็จ
+                  Navigator.pushReplacementNamed(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const Browse_Lecturer(),
-                    ),
-                  );
+                    '/',
+                  ); // ไปหน้า Dashboard (home)
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1a237e),
@@ -114,10 +122,7 @@ class _LoginLecturerState extends State<LoginLecturer> {
                 ),
                 child: const Text(
                   'Login',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.white),
                 ),
               ),
               const SizedBox(height: 16),
