@@ -12,27 +12,29 @@ class _ManageBookingState extends State<ManageBooking> {
   int _currentIndex = 1;
 
   void _onNavTap(int i) {
-  if (i == _currentIndex) return;
-  switch (i) {
-    case 0:
-      // หน้า Home (Browse)
-      break;
-    case 1:
-      // ✅ Requested -> ไป ManageBooking
-      Navigator.pushReplacementNamed(context, '/manage');
-      break;
-    case 2:
-      // หน้า Check (ยังไม่ใช้)
-      break;
-    case 3:
-      // หน้า History (ยังไม่ใช้)
-      break;
-    case 4:
-      // หน้า User (ยังไม่ใช้)
-      break;
+    if (i == _currentIndex) return;
+    switch (i) {
+      case 0:
+        // หน้า Home (Browse)
+        break;
+      case 1:
+        // ✅ Requested -> ไป ManageBooking
+        Navigator.pushReplacementNamed(context, '/manage');
+        break;
+      case 2:
+        // หน้า Check (ยังไม่ใช้)
+        Navigator.pushReplacementNamed(context, '/dashboard');
+        break;
+      case 3:
+        // หน้า History (ยังไม่ใช้)
+        Navigator.pushReplacementNamed(context, '/history');
+        break;
+      case 4:
+        // หน้า User (ยังไม่ใช้)
+        Navigator.pushReplacementNamed(context, '/user');
+        break;
+    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -78,11 +80,23 @@ class _ManageBookingState extends State<ManageBooking> {
         type: BottomNavigationBarType.fixed,
         onTap: _onNavTap,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.assignment_outlined), label: 'Requested'),
-          BottomNavigationBarItem(icon: Icon(Icons.check_box_outlined), label: 'Check'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.assignment_outlined),
+            label: 'Requested',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.check_box_outlined),
+            label: 'Check',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'User'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            label: 'User',
+          ),
         ],
       ),
     );
@@ -108,7 +122,8 @@ class _ManageBookingState extends State<ManageBooking> {
             child: Row(
               children: [
                 Container(
-                  width: 36, height: 36,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.8),
                     borderRadius: BorderRadius.circular(10),
@@ -120,7 +135,9 @@ class _ManageBookingState extends State<ManageBooking> {
                   child: Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.w700, color: Colors.black,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black,
                     ),
                   ),
                 ),

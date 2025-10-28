@@ -106,44 +106,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
     {'icon': Icons.person, 'label': 'User'},
   ];
 
-  // Map สำหรับการนำทางไปยังหน้าจอที่กำหนด
+  // =======================================================================
+  // 1. (แก้ไข) อัปเดต Map สำหรับการนำทาง
+  //    (ลบ const ออก และ เพิ่ม Index 1)
+  // =======================================================================
   final Map<int, Widget> _pageMap = {
-    0: const BrowseRoom(), // Home (Index 0) - ไม่ได้ใช้งานโดยตรง
-    3: const BookingHistoryScreen(), // History (Index 3)
-    4: const UserScreen(), // User (Index 4)
+    // Index 0 (Home) และ 2 (Check) จะอยู่ที่หน้านี้ ไม่ต้องใส่ใน Map
+    1: ManageBooking(), // Index 1 (Requested) -> เชื่อมไป manage.dart
+    3: BookingHistoryScreen(), // Index 3 (History)
+    4: UserScreen(), // Index 4 (User)
   };
 
+  // =======================================================================
+  // 2. (แก้ไข) อัปเดตฟังก์ชันการนำทาง (Navigation Logic)
+  // =======================================================================
   void _onItemTapped(int index) {
     
-    // 1. Home (Index 0): คงอยู่ที่หน้า Dashboard
-    if (index == 0) {
-        setState(() => _selectedIndex = 0); 
-        return;
+    // 1. Home (Index 0) หรือ Check (Index 2): 
+    //    ทั้งสองปุ่มหมายถึงการอยู่ที่หน้า Dashboard (หน้าปัจจุบัน)
+    //    ดังนั้นแค่ตั้งค่าไฮไลท์กลับไปที่ Home (index 0)
+    if (index == 0 || index == 2) {
+      setState(() => _selectedIndex = 0); 
+      return;
     }
 
-    // 2. Requested (Index 1) และ Check (Index 2): กดได้เฉยๆ แต่มี Feedback
-    if (index == 1 || index == 2) { 
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text('ปุ่ม ${_bottomNavItems[index]['label']} ถูกกดแล้ว (รอพัฒนาฟีเจอร์)'),
-                duration: const Duration(seconds: 1),
-            ),
-        );
-        setState(() => _selectedIndex = 0); // รีเซ็ตกลับไปหน้า Home/Dashboard
-        return;
-    }
-
-    // 3. History (Index 3) และ User (Index 4): นำทางไปยังหน้าจอใหม่
-    if (index == 3 || index == 4) {
+    // 2. Requested (Index 1), History (Index 3), User (Index 4):
+    //    ตรวจสอบว่ามีใน Map หรือไม่ แล้วนำทาง (Push) ไปยังหน้าจอใหม่
+    if (_pageMap.containsKey(index)) {
       debugPrint('Bottom Nav Item Pressed: ${_bottomNavItems[index]['label']} (Index $index) - Navigating');
+      
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => _pageMap[index]!),
       ).then((_) {
-        // เมื่อกลับมาจากหน้าจอใหม่ ให้ตั้งค่า Selected Index เป็น Home เสมอ
+        // เมื่อกลับมาจากหน้าจอใหม่ (เช่น กด Back)
+        // ให้ตั้งค่า Selected Index กลับมาเป็น Home (index 0) เสมอ
         setState(() => _selectedIndex = 0);
       });
-    }
+    } 
   }
 
   // Widget สำหรับแสดงบัตรสถิติห้องพัก

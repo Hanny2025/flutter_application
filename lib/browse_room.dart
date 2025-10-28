@@ -87,7 +87,7 @@ class _BrowseRoomState extends State<BrowseRoom> {
         Navigator.pushReplacementNamed(context, '/manage');
         break;
       case 2:
-        // TODO: ไปหน้า Check
+        Navigator.pushReplacementNamed(context, '/dashboard');
         break;
       case 3:
         // TODO: ไปหน้า History
@@ -95,6 +95,7 @@ class _BrowseRoomState extends State<BrowseRoom> {
         break;
       case 4:
         // TODO: ไปหน้า User
+        Navigator.pushReplacementNamed(context, '/user');
         break;
     }
   }
