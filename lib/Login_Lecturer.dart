@@ -24,7 +24,7 @@ class _LoginLecturerState extends State<LoginLecturer> {
             children: [
               const SizedBox(height: 60),
               Image.asset(
-                'assets/images/login.jpg',
+                'assets/images/room.jpg',
                 height: 200,
                 fit: BoxFit.cover,
               ),

@@ -14,7 +14,7 @@ class _Lecturer_reqState extends State<Lecturer_req> {
   final List<Map<String, dynamic>> requests = [
     {
       "roomName": "Family Deluxe Room",
-      "image": "assets/images/login.jpg",
+      "image": "assets/images/room.jpg",
       "price": "1,250 bahts/day",
       "username": "Username 1",
       "time": "08:00 - 10:00",
@@ -22,7 +22,7 @@ class _Lecturer_reqState extends State<Lecturer_req> {
     },
     {
       "roomName": "King Deluxe Room",
-      "image": "assets/images/login.jpg",
+      "image": "assets/images/room.jpg",
       "price": "650 bahts/day",
       "username": "Username 2",
       "time": "15:00 - 17:00",
@@ -30,7 +30,7 @@ class _Lecturer_reqState extends State<Lecturer_req> {
     },
     {
       "roomName": "Deluxe Twin Room",
-      "image": "assets/images/login.jpg",
+      "image": "assets/images/room.jpg",
       "price": "800 bahts/day",
       "username": "Username 3",
       "time": "10:00 - 12:00",
