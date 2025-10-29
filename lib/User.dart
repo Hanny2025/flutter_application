@@ -81,7 +81,7 @@ class _UserScreenState extends State<UserScreen> {
               Navigator.of(context).pop(); // ปิด Dialog
               // ปิดหน้า UserScreen (กลับไปหน้าหลัก) - ต้องแน่ใจว่ากลับไปที่ Root
               if (Navigator.canPop(context)) {
-                 Navigator.of(context).pop(); 
+                Navigator.of(context).pop();
               }
             },
             style: ElevatedButton.styleFrom(
@@ -129,7 +129,10 @@ class _UserScreenState extends State<UserScreen> {
                 Text(
                   'Username: ${user.username}',
                   style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
                 ),
                 Text(
                   'Position: ${user.position}',
@@ -154,11 +157,7 @@ class _UserScreenState extends State<UserScreen> {
           children: [
             Row(
               children: [
-                const Icon(
-                  Icons.logout,
-                  color: Colors.red,
-                  size: 28,
-                ),
+                const Icon(Icons.logout, color: Colors.red, size: 28),
                 const SizedBox(width: 16),
                 const Text(
                   'Log Out',
@@ -180,9 +179,7 @@ class _UserScreenState extends State<UserScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('User'),
-      ),
+      appBar: AppBar(title: const Text('User')),
       // ไม่ต้องใส่ BottomNavigationBar ที่นี่ เพราะจะนำทางไปที่หน้าใหม่
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -193,10 +190,9 @@ class _UserScreenState extends State<UserScreen> {
             _buildProfileCard(),
 
             const Divider(), // เส้นแบ่ง
-
             // 2. ปุ่ม Log Out
             _buildLogoutButton(),
-            
+
             const Divider(),
           ],
         ),
