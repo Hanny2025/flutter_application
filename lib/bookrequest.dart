@@ -80,13 +80,21 @@ class _BookrequestState extends State<Bookrequest> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ✅ AppBar ที่ใช้ title จาก _currentTitle
+      // 2. เพิ่ม AppBar ของตัวเอง
       appBar: AppBar(
-        title: Text(_currentTitle),
+        automaticallyImplyLeading: false,
+        toolbarHeight: 100,
         backgroundColor: primaryBlue,
-        foregroundColor: Colors.white,
+        centerTitle: true,
+        title: const Text(
+          'Booking Now', // นี่คือหัวข้อของหน้า Home
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
-
       // ✅ Body: เนื้อหาหลัก
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -202,28 +210,6 @@ class _BookrequestState extends State<Bookrequest> {
             const SizedBox(height: 20),
           ],
         ),
-      ),
-
-      // ✅ BottomNavigationBar
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.request_page),
-            label: 'Requested',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.check_circle_outline),
-            label: 'Check',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: primaryBlue,
-        unselectedItemColor: Colors.grey[600],
-        type: BottomNavigationBarType.fixed,
-        onTap: _onItemTapped,
       ),
     );
   }

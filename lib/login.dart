@@ -64,14 +64,11 @@ class _LoginState extends State<Login> {
                 const SizedBox(height: 60),
 
                 ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
-                  ),
+                  borderRadius: BorderRadius.circular(20),
                   child: Image.asset(
                     'assets/imgs/room.jpg',
                     height: 250,
-                    width: 380,
+                    width: 400,
                     fit: BoxFit.cover,
                   ),
                 ),

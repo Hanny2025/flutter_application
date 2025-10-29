@@ -121,28 +121,6 @@ class _ProfileState extends State<Profile> {
           ],
         ),
       ),
-
-      // 3. BottomNavigationBar
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.request_page),
-            label: 'Requested',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.check_circle_outline),
-            label: 'Check',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: primaryBlue,
-        unselectedItemColor: Colors.grey[600],
-        type: BottomNavigationBarType.fixed,
-        onTap: _onItemTapped,
-      ),
     );
   }
 }

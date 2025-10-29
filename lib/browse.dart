@@ -191,75 +191,93 @@ class HomeScreenContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: const [
-          // แสดง Card ห้องพักตัวอย่าง 1
-          RoomCard(
-            imageUrl: 'assets/imgs/room3.jpg',
-            roomName: 'Deluxe Twin Room',
-            roomDetail: '2 single beds  -breakfast',
-            maxAdult: 2,
-            pricePerDay: 800,
-            timeSlots: [
-              TimeSlot(
-                time: '08:00 - 10:00',
-                status: 'Free',
-                color: Colors.green,
-              ),
-              TimeSlot(
-                time: '10:00 - 12:00',
-                status: 'Reserved',
-                color: Colors.red,
-              ),
-              TimeSlot(
-                time: '13:00 - 15:00',
-                status: 'Disabled',
-                color: Colors.yellow,
-              ),
-              TimeSlot(
-                time: '15:00 - 17:00',
-                status: 'Disabled',
-                color: Colors.black,
-              ),
-            ],
+    return Scaffold(
+      // 2. เพิ่ม AppBar ของตัวเอง
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        toolbarHeight: 100,
+        backgroundColor: primaryBlue,
+        centerTitle: true,
+        title: const Text(
+          'Rooms', // นี่คือหัวข้อของหน้า Home
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
           ),
-          SizedBox(height: 16),
+        ),
+      ),
+      // 3. ย้าย SingleChildScrollView มาไว้ใน body
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: const [
+            // แสดง Card ห้องพักตัวอย่าง 1
+            RoomCard(
+              imageUrl: 'assets/imgs/room3.jpg',
+              roomName: 'Deluxe Twin Room',
+              roomDetail: '2 single beds  -breakfast',
+              maxAdult: 2,
+              pricePerDay: 800,
+              timeSlots: [
+                TimeSlot(
+                  time: '08:00 - 10:00',
+                  status: 'Free',
+                  color: Colors.green,
+                ),
+                TimeSlot(
+                  time: '10:00 - 12:00',
+                  status: 'Reserved',
+                  color: Colors.red,
+                ),
+                TimeSlot(
+                  time: '13:00 - 15:00',
+                  status: 'Disabled',
+                  color: Colors.yellow,
+                ),
+                TimeSlot(
+                  time: '15:00 - 17:00',
+                  status: 'Disabled',
+                  color: Colors.black,
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
 
-          // แสดง Card ห้องพักตัวอย่าง 2
-          RoomCard(
-            imageUrl: 'assets/imgs/room2.jpg',
-            roomName: 'King Deluxe Room',
-            roomDetail: '1 King bed - breakfast',
-            maxAdult: 1,
-            pricePerDay: 650,
-            timeSlots: [
-              TimeSlot(
-                time: '08:00 - 10:00',
-                status: 'Free',
-                color: Colors.green,
-              ),
-              TimeSlot(
-                time: '10:00 - 12:00',
-                status: 'Reserved',
-                color: Colors.red,
-              ),
-              TimeSlot(
-                time: '13:00 - 15:00',
-                status: 'Disabled',
-                color: Colors.yellow,
-              ),
-              TimeSlot(
-                time: '15:00 - 17:00',
-                status: 'Disabled',
-                color: Colors.black,
-              ),
-            ],
-          ),
-          SizedBox(height: 50),
-        ],
+            // แสดง Card ห้องพักตัวอย่าง 2
+            RoomCard(
+              imageUrl: 'assets/imgs/room2.jpg',
+              roomName: 'King Deluxe Room',
+              roomDetail: '1 King bed - breakfast',
+              maxAdult: 1,
+              pricePerDay: 650,
+              timeSlots: [
+                TimeSlot(
+                  time: '08:00 - 10:00',
+                  status: 'Free',
+                  color: Colors.green,
+                ),
+                TimeSlot(
+                  time: '10:00 - 12:00',
+                  status: 'Reserved',
+                  color: Colors.red,
+                ),
+                TimeSlot(
+                  time: '13:00 - 15:00',
+                  status: 'Disabled',
+                  color: Colors.yellow,
+                ),
+                TimeSlot(
+                  time: '15:00 - 17:00',
+                  status: 'Disabled',
+                  color: Colors.black,
+                ),
+              ],
+            ),
+            SizedBox(height: 50),
+          ],
+        ),
       ),
     );
   }
@@ -293,43 +311,9 @@ class _BrowseState extends State<Browse> {
     });
   }
 
-  // กำหนดชื่อ Title สำหรับแต่ละหน้า
-  String get _currentTitle {
-    switch (_selectedIndex) {
-      case 0:
-        return 'Rooms';
-      case 1:
-        return 'Requested';
-      case 2:
-        return 'Check Status';
-      case 3:
-        return 'History';
-      case 4:
-        return 'Profile';
-      default:
-        return 'Rooms';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 1. AppBar จะเปลี่ยน Title ไปตาม Index ที่เลือก
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        toolbarHeight: 100,
-        backgroundColor: primaryBlue,
-        centerTitle: true,
-        title: Text(
-          _currentTitle, // ใช้ Title ที่อัปเดตแล้ว
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-
       // 2. Body: ใช้ IndexedStack เพื่อแสดงเฉพาะ Widget ที่ถูกเลือก
       body: IndexedStack(index: _selectedIndex, children: _widgetOptions),
 
