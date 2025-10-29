@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/check.dart';
 
 // --- Constants (กำหนดสีหลัก) ---
 const Color primaryBlue = Color(0xFF1976D2);
@@ -66,6 +67,16 @@ class _BookrequestState extends State<Bookrequest> {
     });
   }
 
+  // <<< (แก้ไข _onTimeSlotTapped สำหรับ Dropdown ที่รับ int? ได้)
+  // (DropdownButton's onChanged passes an int?)
+  void _onDropdownChanged(int? newIndex) {
+    if (newIndex != null) {
+      setState(() {
+        _selectedTimeIndex = newIndex;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -84,7 +95,7 @@ class _BookrequestState extends State<Bookrequest> {
           children: [
             // Card รายละเอียดห้อง (Family Deluxe Room)
             const BookingRoomCard(
-              imageUrl: 'assets/family_deluxe.jpg',
+              imageUrl: 'assets/imgs/room3.jpg',
               roomName: 'Family Deluxe Room',
               roomDetails:
                   '1 queen bed 1 single bed\nbreakfast included - electric bottle - free wifi\n- hair dryer - refrigerator - blackout curtains',
@@ -113,12 +124,31 @@ class _BookrequestState extends State<Bookrequest> {
                 border: Border.all(color: Colors.grey.shade300),
                 borderRadius: BorderRadius.circular(5),
               ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Time', style: TextStyle(color: darkGrey)),
-                  Icon(Icons.arrow_drop_down, color: darkGrey),
-                ],
+              child: DropdownButton<int>(
+                // ค่าที่เลือกอยู่ (คือ index)
+                value: _selectedTimeIndex,
+
+                // ทำให้ลูกศรอยู่ขวาสุด
+                isExpanded: true,
+
+                // เอาเส้นใต้สีเทาๆ ออก
+                underline: const SizedBox(),
+
+                // Icon (เหมือนเดิม)
+                icon: const Icon(Icons.arrow_drop_down, color: darkGrey),
+
+                // ฟังก์ชันที่ทำงานเมื่อเลือก item ใหม่
+                onChanged: _onDropdownChanged,
+                // สร้างรายการ Dropdown จาก List 'timeSlots'
+                items: List.generate(timeSlots.length, (index) {
+                  return DropdownMenuItem<int>(
+                    value: index, // ค่าของ item นี้คือ index
+                    child: Text(
+                      timeSlots[index].time, // ข้อความที่แสดงคือเวลา
+                      style: const TextStyle(color: darkGrey),
+                    ),
+                  );
+                }).toList(),
               ),
             ),
             const SizedBox(height: 20),
@@ -136,11 +166,28 @@ class _BookrequestState extends State<Bookrequest> {
             SizedBox(
               height: 50,
               child: ElevatedButton(
-                onPressed: () {
-                  // Logic สำหรับการจอง
+                // <<< 2. เพิ่ม 'async' ตรงนี้
+                onPressed: () async {
+                  // 1. แสดงข้อความ (เหมือนเดิม)
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Booking request sent!')),
                   );
+
+                  // <<< 3. รอ 1 วินาที (เพื่อให้คนอ่านข้อความทัน)
+                  await Future.delayed(const Duration(seconds: 1));
+
+                  // <<< 4. ไปหน้าใหม่ (เช่น หน้า History)
+                  // (ต้องเช็ค 'mounted' ก่อนเสมอหลัง await)
+                  if (mounted) {
+                    Navigator.pushReplacement(
+                      // (หรือ Navigator.push)
+                      context,
+                      MaterialPageRoute(
+                        // <<< 5. ใส่ชื่อคลาสของหน้าใหม่ตรงนี้
+                        builder: (context) => const Check(),
+                      ),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryBlue,

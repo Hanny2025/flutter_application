@@ -146,7 +146,7 @@ class RoomCard extends StatelessWidget {
                         color: Colors.black54,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: () {
                         // 👉 เปลี่ยนจาก SnackBar เป็นการไปหน้า Bookrequest()
@@ -164,8 +164,8 @@ class RoomCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(5),
                         ),
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 8,
+                          horizontal: 30,
+                          vertical: 10,
                         ),
                       ),
                       child: const Text('Book'),
@@ -198,7 +198,7 @@ class HomeScreenContent extends StatelessWidget {
         children: const [
           // แสดง Card ห้องพักตัวอย่าง 1
           RoomCard(
-            imageUrl: 'assets/deluxe_twin.jpg',
+            imageUrl: 'assets/imgs/room3.jpg',
             roomName: 'Deluxe Twin Room',
             roomDetail: '2 single beds  -breakfast',
             maxAdult: 2,
@@ -230,7 +230,7 @@ class HomeScreenContent extends StatelessWidget {
 
           // แสดง Card ห้องพักตัวอย่าง 2
           RoomCard(
-            imageUrl: 'assets/king_deluxe.jpg',
+            imageUrl: 'assets/imgs/room2.jpg',
             roomName: 'King Deluxe Room',
             roomDetail: '1 King bed - breakfast',
             maxAdult: 1,

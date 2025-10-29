@@ -40,7 +40,7 @@ class _CheckState extends State<Check> {
   // ข้อมูลจำลองสำหรับแสดงผลสถานะคำขอ
   final List<RequestStatusItem> statusList = const [
     RequestStatusItem(
-      imageUrl: 'assets/room_101.jpg',
+      imageUrl: 'assets/imgs/room4.jpg',
       roomNumber: 'Room 101',
       date: 'Oct 19, 2025',
       time: '8:00 AM - 10:00 AM',
@@ -49,7 +49,7 @@ class _CheckState extends State<Check> {
       backgroundColor: Color(0xFFF9F7A2), // สีพื้นหลังเหลืองอ่อน
     ),
     RequestStatusItem(
-      imageUrl: 'assets/room_201.jpg',
+      imageUrl: 'assets/imgs/room2.jpg',
       roomNumber: 'Room 201',
       date: 'Oct 20, 2025',
       time: '8:00 AM - 10:00 AM',
@@ -58,7 +58,7 @@ class _CheckState extends State<Check> {
       backgroundColor: Color(0xFFB1F1B7), // สีพื้นหลังเขียวอ่อน
     ),
     RequestStatusItem(
-      imageUrl: 'assets/room_301.jpg',
+      imageUrl: 'assets/imgs/room3.jpg',
       roomNumber: 'Room 301',
       date: 'Oct 21, 2025',
       time: '8:00 AM - 10:00 AM',

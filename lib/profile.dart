@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/login.dart';
 
 // --- Constants ---
 const Color primaryBlue = Color(0xFF1976D2);
@@ -31,11 +32,54 @@ class _ProfileState extends State<Profile> {
     // ในแอปพลิเคชันจริง คุณจะใช้ Navigator เพื่อเปลี่ยนหน้า
   }
 
+  // <<< 1. แก้ไข _handleLogout ให้เรียก Dialog
   void _handleLogout() {
-    // Logic สำหรับการ Log Out
-    print('User logged out.');
-    // นำทางกลับไปยังหน้า Login (ตัวอย่าง)
-    // Navigator.pushReplacementNamed(context, '/login');
+    // เรียกฟังก์ชันที่เพิ่มเข้ามาใหม่
+    _showLogoutDialog(context);
+  }
+
+  // <<< 2. เพิ่มฟังก์ชัน _showLogoutDialog ที่คุณส่งมา
+  // 🔐 ฟังก์ชันแสดงกล่องยืนยันออกจากระบบ
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Confirm Logout',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text('Are you sure you want to log out?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // <<< 3. แก้ไข Navigator ให้ล้าง Stack (เหมือน _handleLogout เดิม)
+                Navigator.pop(context); // ปิด Dialog
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const Login()),
+                  (Route<dynamic> route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text(
+                'Log Out',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
