@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'Lecturer_Browse.dart';
+import 'Lecturer_DashBoard.dart';
 
 class LoginLecturer extends StatefulWidget {
   const LoginLecturer({super.key});
@@ -33,7 +34,7 @@ class _LoginLecturerState extends State<LoginLecturer> {
     // ✅ นำทางไปหน้า BrowseRoom
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const Browse_Lecturer()),
+      MaterialPageRoute(builder: (context) => const DashboardPage()),
     );
   }
 
