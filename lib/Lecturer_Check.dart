@@ -9,7 +9,7 @@ class CheckPage extends StatelessWidget {
   static final List<Map<String, String>> _sampleRequests = [
     {
       "roomName": "Family Deluxe Room",
-      "image": "assets/images/room.jpg",
+      "image": "assets/images/room1.jpg",
       "price": "1,250 bahts/day",
       "username": "Username 1",
       "date": "Apr 1, 2025",
@@ -17,7 +17,7 @@ class CheckPage extends StatelessWidget {
     },
     {
       "roomName": "King Deluxe Room",
-      "image": "assets/images/room.jpg",
+      "image": "assets/images/room2.jpg",
       "price": "650 bahts/day",
       "username": "Username 2",
       "date": "Apr 1, 2025",
@@ -25,7 +25,7 @@ class CheckPage extends StatelessWidget {
     },
     {
       "roomName": "Deluxe Twin Room",
-      "image": "assets/images/room.jpg",
+      "image": "assets/images/room3.jpg",
       "price": "800 bahts/day",
       "username": "Username 3",
       "date": "Apr 1, 2025",
