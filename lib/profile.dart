@@ -17,20 +17,10 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
-  // สถานะสำหรับ Bottom Navigation Bar
-  int _selectedIndex = 4; // 'User' ถูกเลือกตามภาพ
-
   // ข้อมูลจำลองผู้ใช้
   final String userId = '123456';
   final String username = 'John Doe';
   final String position = 'User';
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-    // ในแอปพลิเคชันจริง คุณจะใช้ Navigator เพื่อเปลี่ยนหน้า
-  }
 
   // <<< 1. แก้ไข _handleLogout ให้เรียก Dialog
   void _handleLogout() {

@@ -24,7 +24,7 @@ class Bookrequest extends StatefulWidget {
 
 class _BookrequestState extends State<Bookrequest> {
   // สถานะสำหรับ Bottom Navigation Bar และ Time Slot
-  int _selectedIndex = 1; // 'Requested' ถูกเลือก
+
   int? _selectedTimeIndex = 0; // ช่องเวลา 08:00 - 10:00 ถูกเลือกตามภาพ
 
   final List<RoomTimeSlot> timeSlots = [
@@ -33,32 +33,6 @@ class _BookrequestState extends State<Bookrequest> {
     const RoomTimeSlot('13:00 - 15:00'),
     const RoomTimeSlot('15:00 - 17:00'),
   ];
-
-  // ✅ ฟังก์ชันเปลี่ยนชื่อ title ตามแท็บที่เลือก
-  String get _currentTitle {
-    switch (_selectedIndex) {
-      case 0:
-        return 'Rooms';
-      case 1:
-        return 'Requested';
-      case 2:
-        return 'Check Status';
-      case 3:
-        return 'History';
-      case 4:
-        return 'Profile';
-      default:
-        return 'Rooms';
-    }
-  }
-
-  // เมื่อกดแท็บใน BottomNavigationBar
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-    // สามารถเพิ่ม Navigator.pushNamed() เพื่อเปลี่ยนหน้าได้
-  }
 
   // เมื่อเลือก Time Slot
   void _onTimeSlotTapped(int index) {
@@ -189,6 +163,7 @@ class _BookrequestState extends State<Bookrequest> {
                   if (mounted) {
                     Navigator.pushReplacement(
                       // (หรือ Navigator.push)
+                      // ignore: use_build_context_synchronously
                       context,
                       MaterialPageRoute(
                         // <<< 5. ใส่ชื่อคลาสของหน้าใหม่ตรงนี้
@@ -373,6 +348,7 @@ class TimeSlotSelector extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.grey.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 5,

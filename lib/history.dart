@@ -37,7 +37,6 @@ class History extends StatefulWidget {
 
 class _HistoryState extends State<History> {
   // สถานะสำหรับ Bottom Navigation Bar และแถบ Filter
-  int _selectedIndex = 3; // 'History' ถูกเลือกตามภาพ
   String _selectedFilter = 'All'; // 'All' ถูกเลือกเป็นค่าเริ่มต้น
 
   final List<String> filters = const ['All', 'Approved', 'Rejected'];
@@ -64,12 +63,6 @@ class _HistoryState extends State<History> {
       backgroundColor: Color(0xFFFFD4D4), // สีพื้นหลังแดงอ่อน
     ),
   ];
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
 
   void _onFilterSelected(String filter) {
     setState(() {

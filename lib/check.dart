@@ -34,9 +34,6 @@ class Check extends StatefulWidget {
 }
 
 class _CheckState extends State<Check> {
-  // สถานะสำหรับ Bottom Navigation Bar
-  int _selectedIndex = 2; // 'Check' ถูกเลือกตามภาพ
-
   // ข้อมูลจำลองสำหรับแสดงผลสถานะคำขอ
   final List<RequestStatusItem> statusList = const [
     RequestStatusItem(
@@ -67,12 +64,6 @@ class _CheckState extends State<Check> {
       backgroundColor: Color(0xFFF9A2A2), // สีพื้นหลังแดงอ่อน
     ),
   ];
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -182,6 +173,7 @@ class StatusCard extends StatelessWidget {
                       color: item.backgroundColor,
                       borderRadius: BorderRadius.circular(5),
                       border: Border.all(
+                        // ignore: deprecated_member_use
                         color: item.statusColor.withOpacity(0.5),
                       ),
                     ),
