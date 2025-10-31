@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter_application/app_routes.dart';
 
 class AppBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
@@ -14,32 +14,29 @@ class AppBottomNavigationBar extends StatelessWidget {
       unselectedItemColor: Colors.grey,
       type: BottomNavigationBarType.fixed,
       onTap: (index) {
-        // map index -> named route
+        if (index == currentIndex) return;
+
         switch (index) {
           case 0:
-            Navigator.pushReplacementNamed(context, '/');
+            Navigator.pushReplacementNamed(context, AppRoutes.home);
             break;
           case 1:
-            Navigator.pushReplacementNamed(context, '/request');
+            Navigator.pushReplacementNamed(context, AppRoutes.requested);
             break;
           case 2:
-            // push check page without data (CheckPage handles null)
-            Navigator.pushReplacementNamed(context, '/check');
+            Navigator.pushReplacementNamed(context, AppRoutes.check);
             break;
           case 3:
-            Navigator.pushReplacementNamed(context, '/history');
+            Navigator.pushReplacementNamed(context, AppRoutes.history);
             break;
           case 4:
-            Navigator.pushReplacementNamed(context, '/user');
+            Navigator.pushReplacementNamed(context, AppRoutes.profile);
             break;
         }
       },
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.event_available),
-          label: 'Requested',
-        ),
+        BottomNavigationBarItem(icon: Icon(Icons.event_available), label: 'Requested'),
         BottomNavigationBarItem(icon: Icon(Icons.check), label: 'Check'),
         BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
         BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),

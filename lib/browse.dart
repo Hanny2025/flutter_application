@@ -291,53 +291,37 @@ class Browse extends StatefulWidget {
 }
 
 class _BrowseState extends State<Browse> {
-  // สถานะสำหรับ Bottom Navigation Bar
   int _selectedIndex = 0;
 
-  // รายการ Widget ที่จะแสดงในแต่ละ Tab
-  // ให้แทนที่ Placeholder ด้วยคลาสหน้าจอจริงของคุณ
+  // ✅ ให้มีเท่ากับจำนวนแท็บด้านล่าง และเรียงลำดับให้ตรงกัน
   static final List<Widget> _widgetOptions = <Widget>[
-    const HomeScreenContent(), // 0. Home/Browse Content
-    const Bookrequest(), // 1. Requested (Bookrequest)
-    const Check(), // 2. Check (Check Status)
-    const History(), // 3. History
-    const Profile(), // 4. User/Profile
+    const HomeScreenContent(), // 0. Home
+    const Check(),             // 1. Check
+    const History(),           // 2. History
+    const Profile(),           // 3. User
   ];
 
-  // อัปเดต Index เมื่อแตะ Icon
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    setState(() => _selectedIndex = index);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 2. Body: ใช้ IndexedStack เพื่อแสดงเฉพาะ Widget ที่ถูกเลือก
       body: IndexedStack(index: _selectedIndex, children: _widgetOptions),
 
-      // 3. BottomNavigationBar (เชื่อมต่อกับ _onItemTapped)
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.request_page),
-            label: 'Requested',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.check_circle_outline),
-            label: 'Check',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.check_circle_outline), label: 'Check'),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: primaryBlue,
-        unselectedItemColor: Colors.grey[600],
+        unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        onTap:
-            _onItemTapped, // นี่คือส่วนที่ทำให้ Icon เชื่อมต่อ (เปลี่ยน Index)
+        onTap: _onItemTapped,
       ),
     );
   }
