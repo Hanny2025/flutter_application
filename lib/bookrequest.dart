@@ -62,7 +62,10 @@ class _BookrequestState extends State<Bookrequest> {
         title: const Text(
           'Booking Now',
           style: TextStyle(
-            color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
 
@@ -87,7 +90,10 @@ class _BookrequestState extends State<Bookrequest> {
             const Text(
               'Select time',
               style: TextStyle(
-                fontSize: 16, fontWeight: FontWeight.bold, color: darkGrey),
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: darkGrey,
+              ),
             ),
             const SizedBox(height: 10),
 
@@ -95,8 +101,10 @@ class _BookrequestState extends State<Bookrequest> {
             DropdownButtonFormField<String>(
               value: _selectedTime,
               decoration: InputDecoration(
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
                 ),
@@ -107,14 +115,34 @@ class _BookrequestState extends State<Bookrequest> {
               ),
               isExpanded: true,
               icon: const Icon(Icons.arrow_drop_down, color: darkGrey),
-              items: timeSlots
-                  .map((t) => DropdownMenuItem<String>(
-                        value: t.time,
-                        child: Text(t.time,
-                            style: const TextStyle(color: darkGrey)),
-                      ))
-                  .toList(),
-              onChanged: _onDropdownChanged,
+
+              // --- สร้าง Dropdown Items ---
+              items: timeSlots.map((t) {
+                // ✅ ระบุช่วงเวลาที่ต้องการปิด
+                final disabledTimes = [
+                  '10:00 - 12:00',
+                  '13:00 - 15:00',
+                  '15:00 - 17:00',
+                ];
+                final isDisabled = disabledTimes.contains(t.time);
+
+                return DropdownMenuItem<String>(
+                  value: isDisabled ? null : t.time, // ปิดการเลือก
+                  enabled: !isDisabled,
+                  child: Text(
+                    t.time,
+                    style: TextStyle(
+                      color: isDisabled ? Colors.grey : darkGrey, // สีจางถ้าปิด
+                    ),
+                  ),
+                );
+              }).toList(),
+
+              // --- กำหนด onChanged ให้เลือกได้เฉพาะเวลาที่เปิด ---
+              onChanged: (newValue) {
+                if (newValue == null) return; // ถ้า null = disabled
+                _onDropdownChanged(newValue);
+              },
             ),
 
             const SizedBox(height: 30),
@@ -198,8 +226,10 @@ class BookingRoomCard extends StatelessWidget {
                     height: 180,
                     color: Colors.grey.shade300,
                     alignment: Alignment.center,
-                    child: const Text('Image not found',
-                        style: TextStyle(color: Colors.black54)),
+                    child: const Text(
+                      'Image not found',
+                      style: TextStyle(color: Colors.black54),
+                    ),
                   ),
                 ),
               ),
@@ -216,18 +246,22 @@ class BookingRoomCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(roomName,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: darkGrey,
-                              )),
+                          Text(
+                            roomName,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: darkGrey,
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          Text(roomDetails,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: darkGrey,
-                              )),
+                          Text(
+                            roomDetails,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: darkGrey,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -236,9 +270,13 @@ class BookingRoomCard extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text('Max $maxAdult adults',
-                            style: const TextStyle(
-                              fontSize: 14, color: Colors.black54)),
+                        Text(
+                          'Max $maxAdult adults',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black54,
+                          ),
+                        ),
                         Text(
                           // ถ้าอยากมี comma ให้ใช้ intl แทน
                           '$pricePerDay',
@@ -248,9 +286,10 @@ class BookingRoomCard extends StatelessWidget {
                             color: darkGrey,
                           ),
                         ),
-                        const Text('bahts/day',
-                            style:
-                                TextStyle(fontSize: 12, color: Colors.black54)),
+                        const Text(
+                          'bahts/day',
+                          style: TextStyle(fontSize: 12, color: Colors.black54),
+                        ),
                       ],
                     ),
                   ],
@@ -264,8 +303,7 @@ class BookingRoomCard extends StatelessWidget {
             top: 10,
             right: 10,
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(5),
@@ -273,7 +311,9 @@ class BookingRoomCard extends StatelessWidget {
               child: Text(
                 dateText,
                 style: const TextStyle(
-                  fontSize: 12, fontWeight: FontWeight.bold),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),

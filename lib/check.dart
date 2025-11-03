@@ -70,7 +70,7 @@ class _CheckState extends State<Check> {
     return Scaffold(
       // 1. AppBar
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: true,
         toolbarHeight: 100,
         backgroundColor: primaryBlue,
         centerTitle: true,
