@@ -36,6 +36,9 @@ class RoomCard extends StatelessWidget {
   final List<TimeSlot> timeSlots;
   final Map<String, dynamic> roomData; // 👈 (1. เพิ่ม) รับข้อมูลดิบ
 
+  // ⭐️ 1. (เพิ่ม) รับ Function เข้ามา
+  final Function onBookingComplete;
+
   const RoomCard({
     super.key,
     required this.imageUrl,
@@ -45,6 +48,7 @@ class RoomCard extends StatelessWidget {
     required this.pricePerDay,
     required this.timeSlots,
     required this.roomData, // 👈 (1. เพิ่ม)
+    required this.onBookingComplete, // ⭐️ 1. (เพิ่ม)
   });
 
   @override
@@ -261,6 +265,12 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     return slots;
   }
 
+  void _refreshRoomData() {
+    setState(() {
+      _roomsFuture = fetchRooms();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -322,6 +332,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
                   pricePerDay: room['price_per_day'] as int? ?? 0,
                   timeSlots: slots,
                   roomData: room, // 👈 (2. เพิ่ม) ส่งข้อมูลดิบเข้าไป
+                  onBookingComplete: _refreshRoomData,
                 ),
               );
             },
