@@ -62,7 +62,7 @@ class _LoginState extends State<Login> {
           final username = data['user']['username'];
           final userRole = data['user']['role']?.toString() ?? 'Users'; // ✅ ดึง role
           
-          print('🎯 Navigating to Browse with userId: $userId, username: $username, role: $userRole');
+          print(' Navigating to Browse with userId: $userId, username: $username, role: $userRole');
           
           Navigator.pushReplacement(
             context,
@@ -74,11 +74,11 @@ class _LoginState extends State<Login> {
             ),
           );
         } else {
-          print('❌ User data missing in response');
+          print(' User data missing in response');
           _showErrorSnackBar('Login successful but user data is missing');
         }
       } else {
-        // ❌ Login ไม่สำเร็จ
+      
         String errorMessage = 'Invalid username or password';
         try {
           final errorData = json.decode(response.body);
@@ -86,14 +86,14 @@ class _LoginState extends State<Login> {
             errorMessage = errorData['message'];
           }
         } catch (e) {
-          // Server ไม่ได้ส่ง JSON error กลับมา
+          
         }
 
         _showErrorSnackBar(errorMessage);
       }
     } catch (e) {
       if (!mounted) return;
-      print('🚨 Login error: $e');
+      print(' Login error: $e');
       _showErrorSnackBar('Could not connect to server. Please try again.');
     } finally {
       if (mounted) {

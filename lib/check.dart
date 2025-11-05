@@ -27,28 +27,28 @@ class _CheckState extends State<Check> {
   Future<List<dynamic>> fetchPendingBookings() async {
     final url = Uri.parse('http://$serverIp:3000/check?user_id=${widget.userId}');
     
-    print("📡 Fetching PENDING bookings for user: ${widget.userId}");
+    
     
     try {
       final response = await http.get(url).timeout(const Duration(seconds: 10));
       
-      print("📊 Response status: ${response.statusCode}");
+     
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as List<dynamic>;
-        // ✅ กรองเอาเฉพาะ pending
+    
         final pendingBookings = data.where((item) {
           final status = item['status']?.toString().toLowerCase() ?? '';
           return status == 'pending';
         }).toList();
         
-        print("✅ Pending bookings: ${pendingBookings.length} items");
+       
         return pendingBookings;
       } else {
         throw Exception('Failed to load bookings (Status: ${response.statusCode})');
       }
     } catch (e) {
-      print("🚨 Error fetching pending bookings: $e");
+     
       throw Exception('Failed to fetch pending bookings: $e');
     }
   }

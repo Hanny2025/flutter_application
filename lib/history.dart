@@ -30,18 +30,16 @@ class _HistoryState extends State<History> {
   Future<List<dynamic>> fetchHistory() async {
     final url = Uri.parse('http://$serverIp:3000/check?user_id=${widget.userId}');
     
-    print("📡 Fetching history for user: ${widget.userId}");
-    print("🔗 URL: $url");
+   
     
     try {
       final response = await http.get(url).timeout(const Duration(seconds: 10));
       
-      print("📊 Response status: ${response.statusCode}");
-      print("📦 Response body: ${response.body}");
+     
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as List<dynamic>;
-        print("✅ History data received: ${data.length} items");
+       
         return data;
       } else {
         throw Exception(
@@ -49,7 +47,7 @@ class _HistoryState extends State<History> {
         );
       }
     } catch (e) {
-      print("🚨 Error fetching history: $e");
+      
       throw Exception('Failed to fetch history: $e');
     }
   }

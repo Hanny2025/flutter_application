@@ -29,7 +29,7 @@ class _ProfileState extends State<Profile> {
 
   Future<void> fetchUserData() async {
     try {
-      // ✅ เปลี่ยนไปเรียก Express API แทน PHP
+   
       final response = await http.get(
         Uri.parse("http://192.168.1.36:3000/get_user?user_id=${widget.userId}"),
       );
