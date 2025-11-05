@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/check.dart';
+import 'package:http/http.dart' as http; // 👈 (1. เพิ่ม) Import http
+import 'dart:convert'; // 👈 (2. เพิ่ม) Import convert
 
 /// ====== THEME / COLORS ======
 const Color primaryBlue = Color(0xFF1976D2);
@@ -14,7 +16,13 @@ class RoomTimeSlot {
 
 /// ====== PAGE: Booking Now ======
 class Bookrequest extends StatefulWidget {
-  const Bookrequest({super.key});
+  // 3. (แก้ไข) รับข้อมูลห้องที่ส่งมาจากหน้า Browse
+  final Map<String, dynamic> roomData;
+
+  const Bookrequest({
+    super.key,
+    required this.roomData, // 👈 (เพิ่ม)
+  });
 
   @override
   State<Bookrequest> createState() => _BookrequestState();
@@ -27,6 +35,9 @@ class _BookrequestState extends State<Bookrequest> {
   /// ค่าเวลา (ข้อความ) ที่เลือกไว้สำหรับ dropdown
   String? _selectedTime;
 
+  final String serverIp = '10.2.21.252';
+
+  final int currentUserId = 1; // สมมติ user id ปัจจุบันเป็น 1
   final List<RoomTimeSlot> timeSlots = const [
     RoomTimeSlot('08:00 - 10:00'),
     RoomTimeSlot('10:00 - 12:00'),
@@ -34,10 +45,107 @@ class _BookrequestState extends State<Bookrequest> {
     RoomTimeSlot('15:00 - 17:00'),
   ];
 
+  // (เพิ่ม) Map สำหรับแปลงเวลาไปเป็น Key ใน DB
+  // ‼️ (สำคัญ) ตรวจสอบว่า Key ตรงกับ DB (Time_status_08)
+  final Map<String, String> _timeSlotToDbKey = {
+    '08:00 - 10:00': 'Time_status_08',
+    '10:00 - 12:00': 'Time_status_10',
+    '13:00 - 15:00': 'Time_status_13',
+    '15:00 - 17:00': 'Time_status_15',
+  };
+
+  bool _isLoading = false;
+
+  // (เพิ่มฟังก์ชันนี้ทั้งก้อน)
+  Future<void> _handleBooking() async {
+    if (_selectedTime == null) return; // กันเหนียว
+
+    setState(() => _isLoading = true);
+
+    try {
+      final url = Uri.parse('http://10.2.21.252:3000/bookrequest');
+      final response = await http
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'room_id': widget.roomData['Room_id'],
+              'user_id': currentUserId,
+              // ❌ 'time_slot': _selectedTime,
+              // ✅ ใช้ชื่อคอลัมน์ใน DB แทน เช่น Time_status_08
+              'time_column': _timeSlotToDbKey[_selectedTime],
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (!mounted) return;
+
+      if (response.statusCode == 201) {
+        // สำเร็จ (Server ตอบ 201 Created)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Booking Successful! Status set to Pending'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // ✅ ลิ้งก์ไปหน้า Check (ตามที่คุณขอ)
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const Check()),
+        );
+      } else {
+        // ไม่สำเร็จ (เช่น ห้องโดนจองตัดหน้า 409, หรือ 500)
+        final body = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Booking Failed: ${body['message'] ?? 'Server Error'}',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Error (เช่น ต่อ Server ไม่ได้, Timeout)
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Connection Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+
+    // ‼️ (สำคัญ) ไม่ว่าจะสำเร็จหรือล้มเหลว ต้องหยุดหมุน
+    setState(() => _isLoading = false);
+  }
+
   @override
   void initState() {
     super.initState();
-    _selectedTime = timeSlots[_selectedTimeIndex!].time;
+    // หา Slot ที่ "Free" อันแรก เพื่อตั้งเป็นค่าเริ่มต้น
+    String? firstFreeSlot;
+    int? firstFreeIndex;
+
+    for (int i = 0; i < timeSlots.length; i++) {
+      final timeString = timeSlots[i].time;
+      final dbKey = _timeSlotToDbKey[timeString];
+      // ใช้ widget.roomData เพื่อเข้าถึงข้อมูลที่ส่งมา
+      final status = widget.roomData[dbKey] as String? ?? 'Disabled';
+
+      if (status.toLowerCase() == 'free') {
+        firstFreeSlot = timeString;
+        firstFreeIndex = i;
+        break; // เจออันแรกแล้วหยุด
+      }
+    }
+
+    // ตั้งค่า state (ถ้ามีช่อง Free)
+    if (firstFreeSlot != null) {
+      _selectedTime = firstFreeSlot;
+      _selectedTimeIndex = firstFreeIndex;
+    }
   }
 
   void _onDropdownChanged(String? newValue) {
@@ -74,16 +182,15 @@ class _BookrequestState extends State<Bookrequest> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const BookingRoomCard(
-              imageUrl: 'assets/imgs/room3.jpg',
-              roomName: 'Family Deluxe Room',
-              roomDetails:
-                  '1 queen bed 1 single bed\n'
-                  'breakfast included - electric kettle - free wifi\n'
-                  '- hair dryer - refrigerator - blackout curtains',
-              maxAdult: 3,
-              pricePerDay: 1250,
-              dateText: 'Apr 1, 2025',
+            BookingRoomCard(
+              // ‼️ ตรวจสอบ Key (เช่น 'image_url') ให้ตรงกับ DB
+              imageUrl:
+                  widget.roomData['image_url'] ?? 'assets/imgs/default.jpg',
+              roomName: widget.roomData['Room_name'] ?? 'No Name',
+              roomDetails: widget.roomData['Room_detail'] ?? 'No Detail',
+              maxAdult: widget.roomData['max_adult'] as int? ?? 1,
+              pricePerDay: widget.roomData['price_per_day'] as int? ?? 0,
+              dateText: 'Apr 1, 2025', // (อันนี้ยัง Hardcode ไว้ก่อน)
             ),
             const SizedBox(height: 30),
 
@@ -118,21 +225,20 @@ class _BookrequestState extends State<Bookrequest> {
 
               // --- สร้าง Dropdown Items ---
               items: timeSlots.map((t) {
-                // ✅ ระบุช่วงเวลาที่ต้องการปิด
-                final disabledTimes = [
-                  '10:00 - 12:00',
-                  '13:00 - 15:00',
-                  '15:00 - 17:00',
-                ];
-                final isDisabled = disabledTimes.contains(t.time);
+                // ดึง Key (เช่น 'Time_status_08')
+                final dbKey = _timeSlotToDbKey[t.time];
+                // ดึงสถานะจากข้อมูลที่ส่งมา
+                final status = widget.roomData[dbKey] as String? ?? 'Disabled';
+                // ‼️ ถ้าสถานะไม่ใช่ 'free' (ตัวพิมพ์เล็ก) = ปิด
+                final bool isDisabled = status.toLowerCase() != 'free';
 
                 return DropdownMenuItem<String>(
-                  value: isDisabled ? null : t.time, // ปิดการเลือก
+                  value: isDisabled ? null : t.time,
                   enabled: !isDisabled,
                   child: Text(
-                    t.time,
+                    '${t.time} ($status)', // แสดงสถานะ (Free), (Reserved)
                     style: TextStyle(
-                      color: isDisabled ? Colors.grey : darkGrey, // สีจางถ้าปิด
+                      color: isDisabled ? Colors.grey : darkGrey,
                     ),
                   ),
                 );
@@ -151,27 +257,20 @@ class _BookrequestState extends State<Bookrequest> {
             SizedBox(
               height: 50,
               child: ElevatedButton(
-                onPressed: () async {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Booking $_selectedTime ...')),
-                  );
-
-                  await Future.delayed(const Duration(seconds: 1));
-                  if (!mounted) return;
-
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const Check()),
-                  );
-                },
+                onPressed: (_isLoading || _selectedTime == null)
+                    ? null
+                    : _handleBooking, // 👈 2. (แก้ไข) เรียกฟังก์ชันจอง
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryBlue,
                   foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.grey,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(5),
                   ),
                 ),
-                child: const Text('Book Now', style: TextStyle(fontSize: 18)),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Book Now', style: TextStyle(fontSize: 18)),
               ),
             ),
             const SizedBox(height: 20),

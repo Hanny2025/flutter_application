@@ -3,16 +3,18 @@ import 'package:flutter_application/bookrequest.dart';
 import 'package:flutter_application/check.dart';
 import 'package:flutter_application/history.dart';
 import 'package:flutter_application/profile.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 // สีหลักที่ใช้ในแอป
 const Color primaryBlue = Color(0xFF1976D2);
 const Color darkGrey = Color(0xFF333333);
 
 // ====================================================================
-// WIDGETS ย่อย (RoomCard และ TimeSlot) - นำมาจากโค้ดเดิม
+// WIDGETS ย่อย
 // ====================================================================
 
-/// Model สำหรับเก็บข้อมูลช่วงเวลาและสถานะ
+/// 1. Model (โค้ดเดิม)
 class TimeSlot {
   final String time;
   final String status;
@@ -24,7 +26,7 @@ class TimeSlot {
   });
 }
 
-/// Widget สำหรับแสดง Card ห้องพักแต่ละรายการ
+/// 2. RoomCard (แก้ไข)
 class RoomCard extends StatelessWidget {
   final String imageUrl;
   final String roomName;
@@ -32,6 +34,7 @@ class RoomCard extends StatelessWidget {
   final int maxAdult;
   final int pricePerDay;
   final List<TimeSlot> timeSlots;
+  final Map<String, dynamic> roomData; // 👈 (1. เพิ่ม) รับข้อมูลดิบ
 
   const RoomCard({
     super.key,
@@ -41,6 +44,7 @@ class RoomCard extends StatelessWidget {
     required this.maxAdult,
     required this.pricePerDay,
     required this.timeSlots,
+    required this.roomData, // 👈 (1. เพิ่ม)
   });
 
   @override
@@ -51,7 +55,7 @@ class RoomCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // รูปภาพ
+          // ... (ส่วน Image, Text รายละเอียด เหมือนเดิม) ...
           ClipRRect(
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(10),
@@ -62,7 +66,6 @@ class RoomCard extends StatelessWidget {
               height: 180,
               width: double.infinity,
               fit: BoxFit.cover,
-              // Fallback หากไม่มี asset
               errorBuilder: (context, error, stackTrace) => Container(
                 height: 180,
                 color: Colors.grey[300],
@@ -75,7 +78,6 @@ class RoomCard extends StatelessWidget {
               ),
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: Row(
@@ -103,7 +105,8 @@ class RoomCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      // รายละเอียดช่วงเวลา
+
+                      // 3. แสดง TimeSlots ที่ได้รับมา
                       ...timeSlots
                           .map(
                             (slot) => Row(
@@ -149,11 +152,12 @@ class RoomCard extends StatelessWidget {
                     const SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: () {
-                        // 👉 เปลี่ยนจาก SnackBar เป็นการไปหน้า Bookrequest()
+                        // 👈 (3. แก้ไข) ส่ง roomData ไปยังหน้า Bookrequest
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const Bookrequest(),
+                            builder: (context) =>
+                                Bookrequest(roomData: roomData),
                           ),
                         );
                       },
@@ -185,21 +189,89 @@ class RoomCard extends StatelessWidget {
 // MAIN SCREEN SHELL (Browse)
 // ====================================================================
 
-// สร้าง Widget แยกสำหรับการแสดงเนื้อหาหลักของ Browse (Home)
-class HomeScreenContent extends StatelessWidget {
+class HomeScreenContent extends StatefulWidget {
   const HomeScreenContent({super.key});
+
+  @override
+  State<HomeScreenContent> createState() => _HomeScreenContentState();
+}
+
+class _HomeScreenContentState extends State<HomeScreenContent> {
+  late Future<List<dynamic>> _roomsFuture;
+  final String serverIp = '10.2.21.252';
+
+  @override
+  void initState() {
+    super.initState();
+    _roomsFuture = fetchRooms();
+  }
+
+  Future<List<dynamic>> fetchRooms() async {
+    final url = Uri.parse('http://$serverIp:3000/browse');
+    try {
+      final response = await http.get(url).timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as List<dynamic>;
+      } else {
+        throw Exception(
+          'Failed to load rooms (Status: ${response.statusCode})',
+        );
+      }
+    } catch (e) {
+      throw Exception('Failed to fetch rooms: $e');
+    }
+  }
+
+  // (แก้ไข 5. แก้ 'pending...' -> 'pending' และใช้สีส้ม)
+  Color _mapStatusToColor(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'free':
+        return Colors.green;
+      case 'reserved':
+        return Colors.red;
+      case 'disabled':
+        return Colors.black;
+      case 'pending...': // 👈 แก้ไข
+        return Colors.yellow; // 👈 แก้ไข
+      default:
+        return Colors.grey[400]!;
+    }
+  }
+
+  List<TimeSlot> _buildTimeSlots(Map<String, dynamic> room) {
+    // (แก้ไข 4. แก้ 'Time_status_8' -> 'Time_status_08')
+    final Map<String, String> timeKeyMap = {
+      'Time_status_08': '08:00 - 10:00', // 👈 แก้ไข
+      'Time_status_10': '10:00 - 12:00',
+      'Time_status_13': '13:00 - 15:00',
+      'Time_status_15': '15:00 - 17:00',
+    };
+
+    List<TimeSlot> slots = [];
+    timeKeyMap.forEach((key, timeRange) {
+      final String status = room[key] as String? ?? 'Disabled';
+      slots.add(
+        TimeSlot(
+          time: timeRange,
+          status: status,
+          color: _mapStatusToColor(status),
+        ),
+      );
+    });
+    return slots;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 2. เพิ่ม AppBar ของตัวเอง
       appBar: AppBar(
+        // ... (AppBar เหมือนเดิม) ...
         automaticallyImplyLeading: false,
         toolbarHeight: 100,
         backgroundColor: primaryBlue,
         centerTitle: true,
         title: const Text(
-          'Rooms', // นี่คือหัวข้อของหน้า Home
+          'Rooms',
           style: TextStyle(
             color: Colors.white,
             fontSize: 24,
@@ -207,81 +279,62 @@ class HomeScreenContent extends StatelessWidget {
           ),
         ),
       ),
-      // 3. ย้าย SingleChildScrollView มาไว้ใน body
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: const [
-            // แสดง Card ห้องพักตัวอย่าง 1
-            RoomCard(
-              imageUrl: 'assets/imgs/room3.jpg',
-              roomName: 'Deluxe Twin Room',
-              roomDetail: '2 single beds  -breakfast',
-              maxAdult: 2,
-              pricePerDay: 800,
-              timeSlots: [
-                TimeSlot(
-                  time: '08:00 - 10:00',
-                  status: 'Free',
-                  color: Colors.green,
+      body: FutureBuilder<List<dynamic>>(
+        future: _roomsFuture,
+        builder: (context, snapshot) {
+          // ... (ส่วน Loading, Error, No Data เหมือนเดิม) ...
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Text(
+                  'Error loading rooms:\n${snapshot.error}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.red),
                 ),
-                TimeSlot(
-                  time: '10:00 - 12:00',
-                  status: 'Reserved',
-                  color: Colors.red,
-                ),
-                TimeSlot(
-                  time: '13:00 - 15:00',
-                  status: 'Disabled',
-                  color: Colors.yellow,
-                ),
-                TimeSlot(
-                  time: '15:00 - 17:00',
-                  status: 'Disabled',
-                  color: Colors.black,
-                ),
-              ],
-            ),
-            SizedBox(height: 16),
+              ),
+            );
+          }
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('No rooms found.'));
+          }
 
-            // แสดง Card ห้องพักตัวอย่าง 2
-            RoomCard(
-              imageUrl: 'assets/imgs/room2.jpg',
-              roomName: 'King Deluxe Room',
-              roomDetail: '1 King bed - breakfast',
-              maxAdult: 1,
-              pricePerDay: 650,
-              timeSlots: [
-                TimeSlot(
-                  time: '08:00 - 10:00',
-                  status: 'Free',
-                  color: Colors.green,
+          final List<dynamic> rooms = snapshot.data!;
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16.0),
+            itemCount: rooms.length,
+            itemBuilder: (context, index) {
+              final room = rooms[index];
+              final List<TimeSlot> slots = _buildTimeSlots(room);
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: RoomCard(
+                  // ‼️ ตรวจสอบ Key ให้ตรงกับ DB
+                  imageUrl: room['image_url'] ?? 'assets/imgs/default.jpg',
+                  roomName: room['Room_name'] ?? 'No Name',
+                  roomDetail: room['Room_detail'] ?? 'No Detail',
+                  maxAdult: room['max_adult'] as int? ?? 1,
+                  pricePerDay: room['price_per_day'] as int? ?? 0,
+                  timeSlots: slots,
+                  roomData: room, // 👈 (2. เพิ่ม) ส่งข้อมูลดิบเข้าไป
                 ),
-                TimeSlot(
-                  time: '10:00 - 12:00',
-                  status: 'Reserved',
-                  color: Colors.red,
-                ),
-                TimeSlot(
-                  time: '13:00 - 15:00',
-                  status: 'Disabled',
-                  color: Colors.yellow,
-                ),
-                TimeSlot(
-                  time: '15:00 - 17:00',
-                  status: 'Disabled',
-                  color: Colors.black,
-                ),
-              ],
-            ),
-            SizedBox(height: 50),
-          ],
-        ),
+              );
+            },
+          );
+        },
       ),
     );
   }
 }
+
+// ====================================================================
+// BROWSE PAGE (Bottom Navigation) - (โค้ดเดิม ไม่เปลี่ยนแปลง)
+// ====================================================================
 
 class Browse extends StatefulWidget {
   const Browse({super.key});
@@ -293,12 +346,11 @@ class Browse extends StatefulWidget {
 class _BrowseState extends State<Browse> {
   int _selectedIndex = 0;
 
-  // ✅ ให้มีเท่ากับจำนวนแท็บด้านล่าง และเรียงลำดับให้ตรงกัน
   static final List<Widget> _widgetOptions = <Widget>[
     const HomeScreenContent(), // 0. Home
-    const Check(),             // 1. Check
-    const History(),           // 2. History
-    const Profile(),           // 3. User
+    const Check(), // 1. Check
+    const History(), // 2. History
+    const Profile(), // 3. User
   ];
 
   void _onItemTapped(int index) {
@@ -309,11 +361,13 @@ class _BrowseState extends State<Browse> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: _widgetOptions),
-
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.check_circle_outline), label: 'Check'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.check_circle_outline),
+            label: 'Check',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
         ],

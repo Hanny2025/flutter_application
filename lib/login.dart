@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // <<< 1. เพิ่ม import นี้
 import 'package:flutter_application/browse.dart';
 import 'package:flutter_application/register.dart';
+import 'package:http/http.dart' as http; // <<< 1. เพิ่มตัวนี้
+import 'dart:convert'; // <<< 2. เพิ่มตัวนี้
 
 const Color primaryBlue = Color(0xFF1976D2);
 
@@ -13,6 +15,7 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
+  final url = '10.2.21.252:3000';
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -29,18 +32,80 @@ class _LoginState extends State<Login> {
     super.dispose();
   }
 
+  // <<< 2. อัปเดตฟังก์ชัน _onLogin ทั้งหมด
   Future<void> _onLogin() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
-    await Future.delayed(const Duration(milliseconds: 900));
 
-    if (!mounted) return;
-    setState(() => _loading = false);
+    try {
+      // 1. ดึงข้อมูลจาก text fields
+      final username = _usernameController.text;
+      final password = _passwordController.text;
 
-    // ✅ นำทางไปหน้า BrowseRoom
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const Browse()),
+      // 2. สร้าง URL และ Body สำหรับส่ง request
+      // (สมมติว่า backend ของคุณมี endpoint /login)
+      final fullUrl = 'http://10.2.21.252:3000/login';
+      final body = jsonEncode({'username': username, 'password': password});
+
+      // 3. ส่ง HTTP POST Request
+      final response = await http
+          .post(
+            Uri.parse(fullUrl),
+            headers: {'Content-Type': 'application/json; charset=UTF-8'},
+            body: body,
+          )
+          .timeout(const Duration(seconds: 10)); // <<< เพิ่ม timeout กันค้าง
+
+      // 4. ตรวจสอบสถานะการเชื่อมต่อ (สำคัญมาก)
+      if (!mounted) return;
+
+      // 5. จัดการผลลัพธ์ (Response)
+      if (response.statusCode == 200) {
+        // ✅ Login สำเร็จ (Server ตอบ 200 OK)
+        // คุณอาจจะได้รับ token กลับมา ให้บันทึกไว้ที่นี่
+        // final data = json.decode(response.body);
+        // final token = data['token'];
+        // ... (โค้ดบันทึก token) ...
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const Browse()),
+        );
+      } else {
+        // ❌ Login ไม่สำเร็จ (เช่น 401: Unauthorized)
+        // พยายามดึงข้อความ error จาก server
+        String errorMessage = 'Invalid username or password';
+        try {
+          final errorData = json.decode(response.body);
+          if (errorData['message'] != null) {
+            errorMessage = errorData['message'];
+          }
+        } catch (e) {
+          // Server ไม่ได้ส่ง JSON error กลับมา
+        }
+
+        _showErrorSnackBar(errorMessage);
+      }
+    } catch (e) {
+      // ❌ เกิด Error (เช่น Server ปิด, ไม่มีเน็ต, Timeout)
+      if (!mounted) return;
+      _showErrorSnackBar('Could not connect to server. Please try again.');
+    } finally {
+      // 6. หยุดการโหลดเสมอ ไม่ว่าจะสำเร็จหรือล้มเหลว
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  // <<< 3. เพิ่มฟังก์ชันสำหรับแสดง SnackBar (Error)
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 

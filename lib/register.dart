@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // <<< 1. เพิ่ม import นี้ (สำหรับกันภาษาไทย)
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 // --- Constants (กำหนดสีหลัก) ---
 const Color primaryBlue = Color(0xFF1976D2);
@@ -28,23 +30,39 @@ class _RegisterState extends State<Register> {
   // <<< 4. เพิ่ม RegExp สำหรับกันภาษาไทย (เหมือนหน้า Login)
   final RegExp _thaiPattern = RegExp(r'[ก-๙]');
 
-  // ฟังก์ชันสมัครสมาชิก (Sign Up)
-  void _onSubmit() {
-    // <<< 5. เปลี่ยนมาใช้ Form Key ในการ validate
-    if (!_formKey.currentState!.validate()) {
-      // ถ้า Form ไม่ผ่าน validate ให้หยุดทำงาน
-      return;
-    }
+  void _onSubmit() async {
+    if (!_formKey.currentState!.validate()) return;
 
-    // *** ถ้าผ่านทั้งหมด ***
-    _showMessage('Registration successful! Please login');
-    Navigator.pop(context);
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text.trim();
+
+    try {
+      // ✅ ส่งข้อมูลไปที่ Express server
+      final url = Uri.parse(
+        'http://192.168.1.166:3000/register',
+      ); // เปลี่ยน IP ถ้าใช้มือถือ
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'username': username, 'password': password}),
+      );
+
+      // ✅ ตรวจผลลัพธ์จาก backend
+      if (response.statusCode == 201) {
+        _showMessage('Registration successful! Please login.');
+        Navigator.pop(context);
+      } else {
+        final data = jsonDecode(response.body);
+        _showMessage('Error: ${data['message']}');
+      }
+    } catch (e) {
+      _showMessage('Cannot connect to server: $e');
+    }
   }
 
   void _showMessage(String text) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
-    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
 
   @override

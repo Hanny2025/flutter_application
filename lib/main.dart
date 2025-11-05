@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/login.dart';
 import 'package:flutter_application/register.dart';
 import 'package:flutter_application/browse.dart';
-import 'package:flutter_application/bookrequest.dart';
 import 'package:flutter_application/check.dart';
 import 'package:flutter_application/history.dart';
 import 'package:flutter_application/profile.dart';
-import 'package:flutter_application/app_routes.dart'; 
+import 'package:flutter_application/app_routes.dart';
 
 // -----------------------------------------------------------------
 
@@ -28,7 +27,6 @@ class MyApp extends StatelessWidget {
 
         // ✅ ใช้ชื่อจาก AppRoutes (ป้องกันพิมพ์ผิด)
         AppRoutes.home: (context) => const Browse(),
-        AppRoutes.requested: (context) => const Bookrequest(),
         AppRoutes.check: (context) => const Check(),
         AppRoutes.history: (context) => const History(),
         AppRoutes.profile: (context) => const Profile(),
