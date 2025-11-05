@@ -1,68 +1,65 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:intl/intl.dart';
 
-// --- Constants ---
 const Color primaryBlue = Color(0xFF1976D2);
 const Color darkGrey = Color(0xFF333333);
 
-// --- Model สำหรับ History Item ---
-class HistoryItem {
-  final String roomNumber;
-  final String date;
-  final String time;
-  final String bookedBy;
-  final String approvedBy;
-  final String status;
-  final Color statusColor;
-  final Color backgroundColor;
-
-  const HistoryItem({
-    required this.roomNumber,
-    required this.date,
-    required this.time,
-    required this.bookedBy,
-    required this.approvedBy,
-    required this.status,
-    required this.statusColor,
-    required this.backgroundColor,
-  });
-}
-
-// --- Main Screen Class (History) ---
 class History extends StatefulWidget {
-  const History({super.key});
+  final String userId; // ✅ รับ userId
+  const History({super.key, required this.userId});
 
   @override
   State<History> createState() => _HistoryState();
 }
 
 class _HistoryState extends State<History> {
-  // สถานะสำหรับ Bottom Navigation Bar และแถบ Filter
-  String _selectedFilter = 'All'; // 'All' ถูกเลือกเป็นค่าเริ่มต้น
-
+  late Future<List<dynamic>> _historyFuture;
+  final String serverIp = '192.168.1.36';
+  
+  String _selectedFilter = 'All';
   final List<String> filters = const ['All', 'Approved', 'Rejected'];
 
-  final List<HistoryItem> historyList = const [
-    HistoryItem(
-      roomNumber: 'Room 201',
-      date: 'Oct 20, 2025',
-      time: '8:00 AM - 10:00 AM',
-      bookedBy: 'Arthur Wilson',
-      approvedBy: 'Manager Sam',
-      status: 'Approved',
-      statusColor: Color(0xFF00B909), // สีเขียวเข้ม
-      backgroundColor: Color(0xFFD4FFD6), // สีพื้นหลังเขียวอ่อน
-    ),
-    HistoryItem(
-      roomNumber: 'Room 301',
-      date: 'Oct 21, 2025',
-      time: '8:00 AM - 10:00 AM',
-      bookedBy: 'Kevin Evan',
-      approvedBy: 'Manager Sam',
-      status: 'Rejected',
-      statusColor: Color(0xFFD32F2F), // สีแดงเข้ม
-      backgroundColor: Color(0xFFFFD4D4), // สีพื้นหลังแดงอ่อน
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _historyFuture = fetchHistory();
+  }
+
+  Future<List<dynamic>> fetchHistory() async {
+    final url = Uri.parse('http://$serverIp:3000/check?user_id=${widget.userId}');
+    
+    print("📡 Fetching history for user: ${widget.userId}");
+    print("🔗 URL: $url");
+    
+    try {
+      final response = await http.get(url).timeout(const Duration(seconds: 10));
+      
+      print("📊 Response status: ${response.statusCode}");
+      print("📦 Response body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as List<dynamic>;
+        print("✅ History data received: ${data.length} items");
+        return data;
+      } else {
+        throw Exception(
+          'Failed to load history (Status: ${response.statusCode})',
+        );
+      }
+    } catch (e) {
+      print("🚨 Error fetching history: $e");
+      throw Exception('Failed to fetch history: $e');
+    }
+  }
+
+  // ✅ เพิ่มฟังก์ชันรีเฟรชข้อมูล
+  Future<void> _refreshData() async {
+    setState(() {
+      _historyFuture = fetchHistory();
+    });
+  }
 
   void _onFilterSelected(String filter) {
     setState(() {
@@ -70,18 +67,45 @@ class _HistoryState extends State<History> {
     });
   }
 
-  // ฟังก์ชันสำหรับกรองข้อมูลตามสถานะที่เลือก
-  List<HistoryItem> get _filteredHistoryList {
-    if (_selectedFilter == 'All') {
-      return historyList;
+  Color _mapStatusToColor(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'approved':
+        return const Color(0xFF00B909); // เขียว
+      case 'rejected':
+        return const Color(0xFFD32F2F); // แดง
+      case 'pending':
+        return const Color(0xFFC7B102); // เหลือง
+      default:
+        return Colors.grey;
     }
-    return historyList.where((item) => item.status == _selectedFilter).toList();
+  }
+
+  Color _mapStatusToBgColor(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'approved':
+        return const Color(0xFFD4FFD6); // เขียวอ่อน
+      case 'rejected':
+        return const Color(0xFFFFD4D4); // แดงอ่อน
+      case 'pending':
+        return const Color(0xFFF9F7A2); // เหลืองอ่อน
+      default:
+        return Colors.grey.shade200;
+    }
+  }
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return 'No Date';
+    try {
+      final DateTime date = DateTime.parse(dateStr);
+      return DateFormat('MMM d, yyyy').format(date);
+    } catch (e) {
+      return dateStr;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 1. AppBar
       appBar: AppBar(
         automaticallyImplyLeading: false,
         toolbarHeight: 100,
@@ -96,45 +120,159 @@ class _HistoryState extends State<History> {
           ),
         ),
       ),
+      body: RefreshIndicator(
+        onRefresh: _refreshData,
+        child: Column(
+          children: [
+            // แถบตัวเลือก
+            FilterChipRow(
+              filters: filters,
+              selectedFilter: _selectedFilter,
+              onSelected: _onFilterSelected,
+            ),
 
-      // 2. Body: เนื้อหาหลัก
-      body: Column(
-        children: [
-          // แถบตัวเลือก (All, Approved, Rejected)
-          FilterChipRow(
-            filters: filters,
-            selectedFilter: _selectedFilter,
-            onSelected: _onFilterSelected,
-          ),
+            Expanded(
+              child: FutureBuilder<List<dynamic>>(
+                future: _historyFuture,
+                builder: (context, snapshot) {
+                  // กำลังโหลด
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-          // รายการประวัติ
-          Expanded(
-            child: _filteredHistoryList.isEmpty
-                ? const Center(child: Text('No history found for this status.'))
-                : ListView.builder(
+                  // Error
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Error loading history:\n${snapshot.error}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                            const SizedBox(height: 20),
+                            ElevatedButton(
+                              onPressed: _refreshData,
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  // ไม่มีข้อมูล
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.history_toggle_off, size: 64, color: Colors.grey),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'No booking history found.',
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                          ),
+                          const SizedBox(height: 20),
+                          ElevatedButton(
+                            onPressed: _refreshData,
+                            child: const Text('Refresh'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  // มีข้อมูล
+                  final List<dynamic> allHistory = snapshot.data!;
+
+                  // ✅ แสดงเฉพาะ approved และ rejected (ไม่แสดง pending)
+                  final completedHistory = allHistory.where((item) {
+                    final status = item['status']?.toString().toLowerCase() ?? '';
+                    return status == 'approved' || status == 'rejected';
+                  }).toList();
+
+                  // กรองตาม Chip ที่เลือก
+                  final List<dynamic> filteredList;
+                  if (_selectedFilter == 'All') {
+                    filteredList = completedHistory;
+                  } else {
+                    filteredList = completedHistory.where((item) {
+                      final status = item['status']?.toString().toLowerCase() ?? '';
+                      return status == _selectedFilter.toLowerCase();
+                    }).toList();
+                  }
+
+                  // ตรวจว่าหลังกรองแล้วว่างหรือไม่
+                  if (filteredList.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.filter_alt_off, size: 64, color: Colors.grey),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No ${
+                              _selectedFilter == 'All' 
+                                ? 'completed bookings' 
+                                : '$_selectedFilter bookings'
+                            } found.',
+                            style: const TextStyle(fontSize: 16, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  // เรียงลำดับตามวันที่ (ใหม่สุดอยู่บน)
+                  filteredList.sort((a, b) {
+                    final dateA = DateTime.tryParse(a['booking_date'] ?? '');
+                    final dateB = DateTime.tryParse(b['booking_date'] ?? '');
+                    if (dateA == null || dateB == null) return 0;
+                    return dateB.compareTo(dateA); // ใหม่ -> เก่า
+                  });
+
+                  return ListView.builder(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16.0,
                       vertical: 8.0,
                     ),
-                    itemCount: _filteredHistoryList.length,
+                    itemCount: filteredList.length,
                     itemBuilder: (context, index) {
+                      final item = filteredList[index];
+                      final String status = item['status']?.toString().toLowerCase() ?? 'unknown';
+
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 16.0),
-                        child: HistoryCard(item: _filteredHistoryList[index]),
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: HistoryCard(
+                          roomNumber: item['Room_name']?.toString() ?? 'No Name',
+                          date: _formatDate(item['booking_date']?.toString()),
+                          time: item['Slot_label']?.toString() ?? 'N/A',
+                          status: status,
+                          statusColor: _mapStatusToColor(status),
+                          backgroundColor: _mapStatusToBgColor(status),
+                        ),
                       );
                     },
-                  ),
-          ),
-        ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 // ------------------------------------------------------------------
-// WIDGETS ย่อย: แถบ Filter Chips
+// WIDGETS ย่อย: Filter Chip Row
 // ------------------------------------------------------------------
-
 class FilterChipRow extends StatelessWidget {
   final List<String> filters;
   final String selectedFilter;
@@ -150,105 +288,160 @@ class FilterChipRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: filters.map((filter) {
-          final isSelected = filter == selectedFilter;
-          return Padding(
-            padding: const EdgeInsets.only(right: 10.0),
-            child: ChoiceChip(
-              label: Text(filter),
-              selected: isSelected,
-              selectedColor: darkGrey, // สีพื้นหลังเมื่อถูกเลือก (สีเทาเข้ม)
-              labelStyle: TextStyle(
-                color: isSelected ? Colors.white : Colors.black,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: filters.map((filter) {
+            final isSelected = filter == selectedFilter;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: FilterChip(
+                label: Text(filter),
+                selected: isSelected,
+                selectedColor: primaryBlue,
+                checkmarkColor: Colors.white,
+                labelStyle: TextStyle(
+                  color: isSelected ? Colors.white : Colors.black87,
+                  fontWeight: FontWeight.w500,
+                ),
+                backgroundColor: Colors.grey[200],
+                onSelected: (selected) {
+                  if (selected) {
+                    onSelected(filter);
+                  }
+                },
               ),
-              backgroundColor: Colors.grey[200], // สีพื้นหลังปกติ (สีเทาอ่อน)
-              onSelected: (selected) {
-                if (selected) {
-                  onSelected(filter);
-                }
-              },
-            ),
-          );
-        }).toList(),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
 }
 
 // ------------------------------------------------------------------
-// WIDGETS ย่อย: Card สำหรับแต่ละรายการประวัติ
+// WIDGETS ย่อย: History Card
 // ------------------------------------------------------------------
 class HistoryCard extends StatelessWidget {
-  final HistoryItem item;
+  final String roomNumber;
+  final String date;
+  final String time;
+  final String status;
+  final Color statusColor;
+  final Color backgroundColor;
 
-  const HistoryCard({super.key, required this.item});
+  const HistoryCard({
+    super.key,
+    required this.roomNumber,
+    required this.date,
+    required this.time,
+    required this.status,
+    required this.statusColor,
+    required this.backgroundColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      color: Colors.grey[200], // สีพื้นหลัง Card เป็นสีเทาอ่อนตามรูป
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ชื่อห้อง วันที่ เวลา
-            Text(
-              item.roomNumber,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: darkGrey,
-              ),
-            ),
-            Text(
-              '${item.date} · ${item.time}',
-              style: const TextStyle(fontSize: 14, color: Colors.black87),
-            ),
-            const SizedBox(height: 8),
-
-            // รายละเอียดผู้จองและผู้อนุมัติ
-            Text(
-              'Booked by ${item.bookedBy}',
-              style: const TextStyle(fontSize: 14, color: Colors.black87),
-            ),
-            Text(
-              'Approved by ${item.approvedBy}',
-              style: const TextStyle(fontSize: 14, color: Colors.black87),
-            ),
-            const SizedBox(height: 12),
-
-            // สถานะ (Approved/Rejected)
-            Align(
-              alignment: Alignment.centerRight,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: item.backgroundColor,
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: Text(
-                  item.status,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: item.statusColor,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        roomNumber,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: darkGrey,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+                          const SizedBox(width: 6),
+                          Text(
+                            date,
+                            style: const TextStyle(fontSize: 14, color: Colors.black87),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+                          const SizedBox(width: 6),
+                          Text(
+                            time,
+                            style: const TextStyle(fontSize: 14, color: Colors.black87),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: backgroundColor,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: statusColor.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _getStatusIcon(status),
+                        size: 16,
+                        color: statusColor,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        status.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: statusColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  IconData _getStatusIcon(String status) {
+    switch (status.toLowerCase()) {
+      case 'approved':
+        return Icons.check_circle;
+      case 'rejected':
+        return Icons.cancel;
+      default:
+        return Icons.help_outline;
+    }
   }
 }

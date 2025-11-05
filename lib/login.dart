@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // <<< 1. เพิ่ม import นี้
+import 'package:flutter/services.dart';
 import 'package:flutter_application/browse.dart';
 import 'package:flutter_application/register.dart';
-import 'package:http/http.dart' as http; // <<< 1. เพิ่มตัวนี้
-import 'dart:convert'; // <<< 2. เพิ่มตัวนี้
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 const Color primaryBlue = Color(0xFF1976D2);
 
@@ -15,14 +15,12 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
-  final url = '10.2.21.252:3000';
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscure = true;
   bool _loading = false;
 
-  // <<< 2. สร้าง RegExp สำหรับตรวจจับอักษรไทย (ก-ฮ, สระ, วรรณยุกต์, เลขไทย)
   final RegExp _thaiPattern = RegExp(r'[ก-๙]');
 
   @override
@@ -32,48 +30,55 @@ class _LoginState extends State<Login> {
     super.dispose();
   }
 
-  // <<< 2. อัปเดตฟังก์ชัน _onLogin ทั้งหมด
   Future<void> _onLogin() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
 
     try {
-      // 1. ดึงข้อมูลจาก text fields
       final username = _usernameController.text;
       final password = _passwordController.text;
 
-      // 2. สร้าง URL และ Body สำหรับส่ง request
-      // (สมมติว่า backend ของคุณมี endpoint /login)
-      final fullUrl = 'http://10.2.21.252:3000/login';
+      final fullUrl = 'http://192.168.1.36:3000/login';
       final body = jsonEncode({'username': username, 'password': password});
 
-      // 3. ส่ง HTTP POST Request
       final response = await http
           .post(
             Uri.parse(fullUrl),
             headers: {'Content-Type': 'application/json; charset=UTF-8'},
             body: body,
           )
-          .timeout(const Duration(seconds: 10)); // <<< เพิ่ม timeout กันค้าง
+          .timeout(const Duration(seconds: 10));
 
-      // 4. ตรวจสอบสถานะการเชื่อมต่อ (สำคัญมาก)
       if (!mounted) return;
 
-      // 5. จัดการผลลัพธ์ (Response)
+      // ✅ ตรวจสอบ response อย่างถูกต้อง
       if (response.statusCode == 200) {
-        // ✅ Login สำเร็จ (Server ตอบ 200 OK)
-        // คุณอาจจะได้รับ token กลับมา ให้บันทึกไว้ที่นี่
-        // final data = json.decode(response.body);
-        // final token = data['token'];
-        // ... (โค้ดบันทึก token) ...
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const Browse()),
-        );
+        final data = json.decode(response.body);
+        print('✅ Login successful: $data');
+        
+        // ✅ ตรวจสอบว่ามี user object และ User_id
+        if (data['user'] != null && data['user']['User_id'] != null) {
+          final userId = data['user']['User_id'].toString();
+          final username = data['user']['username'];
+          final userRole = data['user']['role']?.toString() ?? 'Users'; // ✅ ดึง role
+          
+          print('🎯 Navigating to Browse with userId: $userId, username: $username, role: $userRole');
+          
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => Browse(
+                userId: userId, 
+                userRole: userRole, // ✅ ส่ง userRole ไปด้วย
+              ),
+            ),
+          );
+        } else {
+          print('❌ User data missing in response');
+          _showErrorSnackBar('Login successful but user data is missing');
+        }
       } else {
-        // ❌ Login ไม่สำเร็จ (เช่น 401: Unauthorized)
-        // พยายามดึงข้อความ error จาก server
+        // ❌ Login ไม่สำเร็จ
         String errorMessage = 'Invalid username or password';
         try {
           final errorData = json.decode(response.body);
@@ -87,18 +92,16 @@ class _LoginState extends State<Login> {
         _showErrorSnackBar(errorMessage);
       }
     } catch (e) {
-      // ❌ เกิด Error (เช่น Server ปิด, ไม่มีเน็ต, Timeout)
       if (!mounted) return;
+      print('🚨 Login error: $e');
       _showErrorSnackBar('Could not connect to server. Please try again.');
     } finally {
-      // 6. หยุดการโหลดเสมอ ไม่ว่าจะสำเร็จหรือล้มเหลว
       if (mounted) {
         setState(() => _loading = false);
       }
     }
   }
 
-  // <<< 3. เพิ่มฟังก์ชันสำหรับแสดง SnackBar (Error)
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -124,7 +127,6 @@ class _LoginState extends State<Login> {
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-
               children: [
                 const SizedBox(height: 60),
 
@@ -167,7 +169,6 @@ class _LoginState extends State<Login> {
                     }
                     return null;
                   },
-                  // <<< 3. เพิ่ม Input Formatter เพื่อ "กัน" ไม่ให้พิมพ์ไทย
                   inputFormatters: [
                     FilteringTextInputFormatter.deny(_thaiPattern),
                   ],
@@ -190,7 +191,7 @@ class _LoginState extends State<Login> {
                     enabledBorder: _rounded(),
                     focusedBorder: _rounded(
                       const Color(0xFF4A78F6),
-                    ), // โทนน้ำเงินปุ่ม
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -199,7 +200,6 @@ class _LoginState extends State<Login> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscure,
-                  // <<< 3. อัปเดต Validator
                   validator: (v) {
                     if (v == null || v.isEmpty) {
                       return 'Enter password';
@@ -209,7 +209,6 @@ class _LoginState extends State<Login> {
                     }
                     return null;
                   },
-                  // <<< 3. เพิ่ม Input Formatter เพื่อ "กัน" ไม่ให้พิมพ์ไทย
                   inputFormatters: [
                     FilteringTextInputFormatter.deny(_thaiPattern),
                   ],
@@ -241,6 +240,8 @@ class _LoginState extends State<Login> {
                   ),
                 ),
                 const SizedBox(height: 24),
+                
+                // Login Button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -249,13 +250,24 @@ class _LoginState extends State<Login> {
                       backgroundColor: Colors.blue,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: const Text(
-                      'LOGIN',
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
+                    child: _loading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation(Colors.white),
+                            ),
+                          )
+                        : const Text(
+                            'LOGIN',
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 16),
+                
+                // Register Link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -263,14 +275,12 @@ class _LoginState extends State<Login> {
                       "Don't have an account? ",
                       style: TextStyle(color: Colors.grey),
                     ),
-                    const SizedBox(width: 10), // 👈 เพิ่มระยะห่างเล็กน้อย
+                    const SizedBox(width: 10),
                     GestureDetector(
                       onTap: () {
-                        // <<< 2. แก้ไขตรงนี้
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            // สมมติว่าคลาสของคุณชื่อ Register()
                             builder: (context) => const Register(),
                           ),
                         );

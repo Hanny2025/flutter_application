@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/login.dart';
 import 'package:flutter_application/register.dart';
-import 'package:flutter_application/browse.dart';
-import 'package:flutter_application/check.dart';
-import 'package:flutter_application/history.dart';
-import 'package:flutter_application/profile.dart';
-import 'package:flutter_application/app_routes.dart';
+import 'check.dart';
+import 'login.dart';
+import 'browse.dart';
+import 'bookrequest.dart';
+import 'history.dart';
+import 'profile.dart';
 
 // -----------------------------------------------------------------
 
@@ -19,17 +19,16 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Room Booking App',
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color.fromARGB(255, 0, 62, 195),
+        ),
+        useMaterial3: true,
+      ),
       initialRoute: '/login',
-
       routes: {
         '/login': (context) => const Login(),
         '/register': (context) => const Register(),
-
-        // ✅ ใช้ชื่อจาก AppRoutes (ป้องกันพิมพ์ผิด)
-        AppRoutes.home: (context) => const Browse(),
-        AppRoutes.check: (context) => const Check(),
-        AppRoutes.history: (context) => const History(),
-        AppRoutes.profile: (context) => const Profile(),
       },
     );
   }

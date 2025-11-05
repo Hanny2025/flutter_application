@@ -1,42 +1,44 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
-class AppBottomNavigationBar extends StatelessWidget {
+// --- Constants ---
+const Color primaryBlue = Color(0xFF1976D2);
+
+class CustomBottomNav extends StatelessWidget {
   final int currentIndex;
-  const AppBottomNavigationBar({super.key, required this.currentIndex});
+  final ValueChanged<int> onTap;
+
+  const CustomBottomNav({
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    const primary = Color.fromARGB(255, 0, 62, 195);
     return BottomNavigationBar(
-      currentIndex: currentIndex,
-      selectedItemColor: primary,
-      unselectedItemColor: Colors.grey,
-      type: BottomNavigationBarType.fixed,
-      onTap: (index) {
-        // map index -> named route
-        switch (index) {
-          case 0:
-            Navigator.pushReplacementNamed(context, '/');
-            break;
-          case 1:
-            Navigator.pushReplacementNamed(context, '/check');
-            break;
-          case 2:
-            // push check page without data (CheckPage handles null)
-            Navigator.pushReplacementNamed(context, '/history');
-            break;
-          case 3:
-            Navigator.pushReplacementNamed(context, '/user');
-            break;
-        }
-      },
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.check), label: 'Check'),
-        BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
+      items: const <BottomNavigationBarItem>[
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home),
+          label: 'Home',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.check_circle_outline),
+          label: 'Check',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.history),
+          label: 'History',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person),
+          label: 'User',
+        ),
       ],
+      currentIndex: currentIndex,
+      selectedItemColor: primaryBlue,
+      unselectedItemColor: Colors.grey,
+      type: BottomNavigationBarType.fixed, // (สำคัญ) ทำให้แสดง 4 แท็บได้
+      onTap: onTap,
     );
   }
 }

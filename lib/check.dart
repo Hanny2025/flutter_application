@@ -1,68 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:intl/intl.dart'; // 👈 (1. เพิ่ม) สำหรับจัดรูปแบบวันที่
+import 'package:intl/intl.dart';
 
-// --- Constants ---
 const Color primaryBlue = Color(0xFF1976D2);
 const Color darkGrey = Color(0xFF333333);
 
-// --- Main Screen Class (Check) ---
 class Check extends StatefulWidget {
-  const Check({super.key});
+  final String userId;
+  const Check({super.key, required this.userId});
 
   @override
   State<Check> createState() => _CheckState();
 }
 
 class _CheckState extends State<Check> {
-  // ‼️ (2. เพิ่ม) State ใหม่สำหรับ FutureBuilder
   late Future<List<dynamic>> _bookingsFuture;
-  final String serverIp = '10.2.21.252';
-
-  // ‼️ (3. เพิ่ม) ID ของผู้ใช้ปัจจุบัน
-  // (สำคัญ!) ปกติค่านี้ต้องมาจากหน้า Login/SharedPreferences
-  // ตอนนี้ขอใส่เลข 1 จำลองไปก่อน
-  final int currentUserId = 1;
-
-  // ‼️ (4. ลบ) ลบ List ข้อมูลจำลอง (statusList) ทิ้ง
+  final String serverIp = '192.168.1.36';
 
   @override
   void initState() {
     super.initState();
-    // ‼️ (5. เพิ่ม) สั่งให้โหลดข้อมูลเมื่อหน้านี้ถูกสร้าง
-    _bookingsFuture = fetchMyBookings();
+    _bookingsFuture = fetchPendingBookings();
   }
 
-  // ‼️ (6. เพิ่ม) ฟังก์ชันสำหรับเรียก API /my-bookings
-  Future<List<dynamic>> fetchMyBookings() async {
-    final url = Uri.parse('http://$serverIp:3000/check?user_id=$currentUserId');
+  Future<List<dynamic>> fetchPendingBookings() async {
+    final url = Uri.parse('http://$serverIp:3000/check?user_id=${widget.userId}');
+    
+    print("📡 Fetching PENDING bookings for user: ${widget.userId}");
+    
     try {
       final response = await http.get(url).timeout(const Duration(seconds: 10));
+      
+      print("📊 Response status: ${response.statusCode}");
 
       if (response.statusCode == 200) {
-        // คืนค่า List ของ bookings (e.g., [ {...}, {...} ])
-        return jsonDecode(response.body) as List<dynamic>;
+        final data = jsonDecode(response.body) as List<dynamic>;
+        // ✅ กรองเอาเฉพาะ pending
+        final pendingBookings = data.where((item) {
+          final status = item['status']?.toString().toLowerCase() ?? '';
+          return status == 'pending';
+        }).toList();
+        
+        print("✅ Pending bookings: ${pendingBookings.length} items");
+        return pendingBookings;
       } else {
-        throw Exception(
-          'Failed to load bookings (Status: ${response.statusCode})',
-        );
+        throw Exception('Failed to load bookings (Status: ${response.statusCode})');
       }
     } catch (e) {
-      throw Exception('Failed to fetch bookings: $e');
+      print("🚨 Error fetching pending bookings: $e");
+      throw Exception('Failed to fetch pending bookings: $e');
     }
   }
 
-  // ‼️ (7. เพิ่ม) ฟังก์ชัน helpers สำหรับแปลงข้อมูล
-  // (ย้ายมาจากใน Card)
   Color _mapStatusToColor(String? status) {
     switch (status?.toLowerCase()) {
-      case 'pending...':
-        return const Color(0xFFC7B102); // เหลืองเข้ม
-      case 'approved': // (ถ้าคุณมีสถานะนี้ในอนาคต)
-        return const Color(0xFF00B909); // เขียว
-      case 'rejected': // (ถ้าคุณมีสถานะนี้ในอนาคต)
-        return const Color(0xFFD32F2F); // แดง
+      case 'pending':
+        return const Color(0xFFC7B102); // เหลือง
       default:
         return Colors.grey;
     }
@@ -70,56 +64,39 @@ class _CheckState extends State<Check> {
 
   Color _mapStatusToBgColor(String? status) {
     switch (status?.toLowerCase()) {
-      case 'pending...':
+      case 'pending':
         return const Color(0xFFF9F7A2); // เหลืองอ่อน
-      case 'approved':
-        return const Color(0xFFB1F1B7); // เขียวอ่อน
-      case 'rejected':
-        return const Color(0xFFF9A2A2); // แดงอ่อน
       default:
         return Colors.grey.shade200;
     }
   }
 
-  // Helper สำหรับจัดรูปแบบวันที่
   String _formatDate(String? dateStr) {
     if (dateStr == null) return 'No Date';
     try {
       final DateTime date = DateTime.parse(dateStr);
-      // "Oct 19, 2025"
       return DateFormat('MMM d, yyyy').format(date);
     } catch (e) {
-      return dateStr; // คืนค่าเดิมถ้าแปลงไม่ได้
+      return dateStr;
     }
   }
 
-  // Helper สำหรับจัดรูปแบบเวลา (HH:mm:ss -> HH:mm)
-  String _formatTime(String? timeStr) {
-    if (timeStr == null) return 'N/A';
-    try {
-      // 13:00:00
-      final parts = timeStr.split(':');
-      if (parts.length >= 2) {
-        return '${parts[0]}:${parts[1]}'; // "13:00"
-      }
-      return timeStr;
-    } catch (e) {
-      return timeStr;
-    }
+  Future<void> _refreshData() async {
+    setState(() {
+      _bookingsFuture = fetchPendingBookings();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 1. AppBar (เหมือนเดิม)
       appBar: AppBar(
-        automaticallyImplyLeading:
-            false, // ‼️ (แก้) เอาปุ่ม Back ออก (เพราะเป็นแท็บ)
+        automaticallyImplyLeading: false,
         toolbarHeight: 100,
         backgroundColor: primaryBlue,
         centerTitle: true,
         title: const Text(
-          'Check Request Status', // (แก้ Chek -> Check)
+          'Pending Requests',
           style: TextStyle(
             color: Colors.white,
             fontSize: 24,
@@ -127,79 +104,92 @@ class _CheckState extends State<Check> {
           ),
         ),
       ),
+      body: RefreshIndicator(
+        onRefresh: _refreshData,
+        child: FutureBuilder<List<dynamic>>(
+          future: _bookingsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-      // ‼️ (8. แก้ไข) 2. Body: เปลี่ยนเป็น FutureBuilder
-      body: FutureBuilder<List<dynamic>>(
-        future: _bookingsFuture,
-        builder: (context, snapshot) {
-          // --- Case 1: กำลังโหลด ---
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          // --- Case 2: โหลด Error ---
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Text(
-                  'Error loading data:\n${snapshot.error}',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.red),
-                ),
-              ),
-            );
-          }
-
-          // --- Case 3: โหลดสำเร็จ แต่ไม่มีข้อมูล ---
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
-              child: Text(
-                'You have no booking requests.',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-            );
-          }
-
-          // --- Case 4: โหลดสำเร็จ และมีข้อมูล ---
-          final List<dynamic> bookings = snapshot.data!;
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16.0),
-            itemCount: bookings.length,
-            itemBuilder: (context, index) {
-              final item = bookings[index] as Map<String, dynamic>;
-
-              // ‼️ (9. เพิ่ม) ส่งข้อมูลจริงไปให้ Card
-              // (แปลงข้อมูลที่ได้จาก Server ให้เป็นรูปแบบที่ Card ต้องการ)
-              final String status = item['status'] ?? 'Unknown';
-
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: StatusCard(
-                  imageUrl: item['image_url'] ?? 'assets/imgs/default.jpg',
-                  roomNumber: item['Room_name'] ?? 'No Name',
-                  date: _formatDate(item['booking_date']),
-                  time:
-                      '${_formatTime(item['start_time'])} - ${_formatTime(item['end_time'])}',
-                  status: status,
-                  statusColor: _mapStatusToColor(status),
-                  backgroundColor: _mapStatusToBgColor(status),
+            if (snapshot.hasError) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error loading data:\n${snapshot.error}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: _refreshData,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
                 ),
               );
-            },
-          );
-        },
+            }
+
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.pending_actions, size: 64, color: Colors.grey),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'No pending booking requests.',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _refreshData,
+                      child: const Text('Refresh'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final List<dynamic> bookings = snapshot.data!;
+
+            return ListView.builder(
+              padding: const EdgeInsets.all(16.0),
+              itemCount: bookings.length,
+              itemBuilder: (context, index) {
+                final item = bookings[index];
+                final String status = item['status']?.toString().toLowerCase() ?? 'pending';
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: StatusCard(
+                    imageUrl: 'assets/imgs/room.jpg',
+                    roomNumber: item['Room_name']?.toString() ?? 'No Name',
+                    date: _formatDate(item['booking_date']?.toString()),
+                    time: item['Slot_label']?.toString() ?? 'N/A',
+                    status: status,
+                    statusColor: _mapStatusToColor(status),
+                    backgroundColor: _mapStatusToBgColor(status),
+                  ),
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
 }
 
-// ------------------------------------------------------------------
-// WIDGETS ย่อย: Card (StatusCard)
-// ------------------------------------------------------------------
 class StatusCard extends StatelessWidget {
-  // ‼️ (10. แก้ไข) เปลี่ยนจาก Model เป็นรับค่าตรงๆ
   final String imageUrl;
   final String roomNumber;
   final String date;
@@ -227,14 +217,12 @@ class StatusCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // รูปภาพห้อง (ซ้ายมือ)
           ClipRRect(
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(10),
               bottomLeft: Radius.circular(10),
             ),
             child: Image.asset(
-              // ‼️ (หมายเหตุ) ถ้า image_url เป็น http ให้ใช้ Image.network
               imageUrl,
               width: 120,
               height: 120,
@@ -244,13 +232,11 @@ class StatusCard extends StatelessWidget {
                 height: 120,
                 color: Colors.grey[300],
                 child: const Center(
-                  child: Icon(Icons.image, color: Colors.grey),
+                  child: Icon(Icons.meeting_room, color: Colors.grey, size: 40),
                 ),
               ),
             ),
           ),
-
-          // รายละเอียดคำขอ (ขวามือ)
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(12.0),
@@ -258,46 +244,64 @@ class StatusCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    roomNumber, // 👈 ใช้ค่าที่ส่งมา
+                    roomNumber,
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: darkGrey,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        date,
+                        style: const TextStyle(fontSize: 14, color: Colors.black87),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 4),
-                  Text(
-                    date, // 👈 ใช้ค่าที่ส่งมา
-                    style: const TextStyle(fontSize: 14, color: Colors.black87),
+                  Row(
+                    children: [
+                      Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        time,
+                        style: const TextStyle(fontSize: 14, color: Colors.black87),
+                      ),
+                    ],
                   ),
-                  Text(
-                    time, // 👈 ใช้ค่าที่ส่งมา
-                    style: const TextStyle(fontSize: 14, color: Colors.black87),
-                  ),
-                  const SizedBox(height: 10),
-
-                  // สถานะ (Pending/Approved/Rejected)
+                  const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
-                      vertical: 4,
+                      vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: backgroundColor, // 👈 ใช้ค่าที่ส่งมา
-                      borderRadius: BorderRadius.circular(5),
-                      border: Border.all(
-                        color: statusColor.withOpacity(
-                          0.5,
-                        ), // 👈 ใช้ค่าที่ส่งมา
-                      ),
+                      color: backgroundColor,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: statusColor.withOpacity(0.5)),
                     ),
-                    child: Text(
-                      status, // 👈 ใช้ค่าที่ส่งมา
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: statusColor, // 👈 ใช้ค่าที่ส่งมา
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.pending,
+                          size: 16,
+                          color: statusColor,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          status.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: statusColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

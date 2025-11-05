@@ -39,7 +39,7 @@ class _RegisterState extends State<Register> {
     try {
       // ✅ ส่งข้อมูลไปที่ Express server
       final url = Uri.parse(
-        'http://192.168.1.166:3000/register',
+        'http://192.168.1.36:3000/register',
       ); // เปลี่ยน IP ถ้าใช้มือถือ
       final response = await http.post(
         url,
