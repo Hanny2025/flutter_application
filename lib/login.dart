@@ -38,7 +38,7 @@ class _LoginState extends State<Login> {
       final username = _usernameController.text;
       final password = _passwordController.text;
 
-      final fullUrl = 'http://192.168.1.36:3000/login';
+      final fullUrl = 'http://172.27.8.71:3000/login';
       final body = jsonEncode({'username': username, 'password': password});
 
       final response = await http
@@ -55,20 +55,23 @@ class _LoginState extends State<Login> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         print('✅ Login successful: $data');
-        
+
         // ✅ ตรวจสอบว่ามี user object และ User_id
         if (data['user'] != null && data['user']['User_id'] != null) {
           final userId = data['user']['User_id'].toString();
           final username = data['user']['username'];
-          final userRole = data['user']['role']?.toString() ?? 'Users'; // ✅ ดึง role
-          
-          print(' Navigating to Browse with userId: $userId, username: $username, role: $userRole');
-          
+          final userRole =
+              data['user']['role']?.toString() ?? 'Users'; // ✅ ดึง role
+
+          print(
+            ' Navigating to Browse with userId: $userId, username: $username, role: $userRole',
+          );
+
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => Browse(
-                userId: userId, 
+                userId: userId,
                 userRole: userRole, // ✅ ส่ง userRole ไปด้วย
               ),
             ),
@@ -78,16 +81,13 @@ class _LoginState extends State<Login> {
           _showErrorSnackBar('Login successful but user data is missing');
         }
       } else {
-      
         String errorMessage = 'Invalid username or password';
         try {
           final errorData = json.decode(response.body);
           if (errorData['message'] != null) {
             errorMessage = errorData['message'];
           }
-        } catch (e) {
-          
-        }
+        } catch (e) {}
 
         _showErrorSnackBar(errorMessage);
       }
@@ -189,9 +189,7 @@ class _LoginState extends State<Login> {
                     ),
                     border: _rounded(),
                     enabledBorder: _rounded(),
-                    focusedBorder: _rounded(
-                      const Color(0xFF4A78F6),
-                    ),
+                    focusedBorder: _rounded(const Color(0xFF4A78F6)),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -240,7 +238,7 @@ class _LoginState extends State<Login> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Login Button
                 SizedBox(
                   width: double.infinity,
@@ -266,7 +264,7 @@ class _LoginState extends State<Login> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Register Link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

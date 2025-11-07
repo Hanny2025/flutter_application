@@ -16,7 +16,7 @@ class Check extends StatefulWidget {
 
 class _CheckState extends State<Check> {
   late Future<List<dynamic>> _bookingsFuture;
-  final String serverIp = '192.168.1.36';
+  final String serverIp = '172.27.8.71';
 
   @override
   void initState() {
@@ -25,30 +25,28 @@ class _CheckState extends State<Check> {
   }
 
   Future<List<dynamic>> fetchPendingBookings() async {
-    final url = Uri.parse('http://$serverIp:3000/check?user_id=${widget.userId}');
-    
-    
-    
+    final url = Uri.parse(
+      'http://$serverIp:3000/check?user_id=${widget.userId}',
+    );
+
     try {
       final response = await http.get(url).timeout(const Duration(seconds: 10));
-      
-     
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as List<dynamic>;
-    
+
         final pendingBookings = data.where((item) {
           final status = item['status']?.toString().toLowerCase() ?? '';
           return status == 'pending';
         }).toList();
-        
-       
+
         return pendingBookings;
       } else {
-        throw Exception('Failed to load bookings (Status: ${response.statusCode})');
+        throw Exception(
+          'Failed to load bookings (Status: ${response.statusCode})',
+        );
       }
     } catch (e) {
-     
       throw Exception('Failed to fetch pending bookings: $e');
     }
   }
@@ -74,9 +72,27 @@ class _CheckState extends State<Check> {
   String _formatDate(String? dateStr) {
     if (dateStr == null) return 'No Date';
     try {
+      // 1. แปลงสตริงให้เป็น DateTime
       final DateTime date = DateTime.parse(dateStr);
-      return DateFormat('MMM d, yyyy').format(date);
+
+      // 2. แปลงเป็นเวลาท้องถิ่นของอุปกรณ์ (สำคัญ!)
+      // ถ้า dateStr เป็น UTC, .toLocal() จะปรับวันที่/เวลา ให้ตรงกับ Timezone ของอุปกรณ์
+      final DateTime localDate = date.toLocal();
+
+      // 3. จัดรูปแบบเฉพาะวันที่
+      // DateFormat.yMMMd().format(localDate) จะดีกว่าเพราะรองรับ Locale
+      return DateFormat('MMM d, yyyy').format(localDate);
     } catch (e) {
+      // ในกรณีที่สตริงเป็นแค่ "YYYY-MM-DD" ที่ไม่มีเวลา
+      if (dateStr!.length <= 10) {
+        // ให้ใช้ DateFormat.yMMMd() เพื่อจัดการกับสตริงวันที่เท่านั้น
+        try {
+          final DateTime dateOnly = DateFormat('yyyy-MM-dd').parse(dateStr);
+          return DateFormat('MMM d, yyyy').format(dateOnly);
+        } catch (_) {
+          return dateStr;
+        }
+      }
       return dateStr;
     }
   }
@@ -120,7 +136,11 @@ class _CheckState extends State<Check> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                      const Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: Colors.red,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         'Error loading data:\n${snapshot.error}',
@@ -143,7 +163,11 @@ class _CheckState extends State<Check> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.pending_actions, size: 64, color: Colors.grey),
+                    const Icon(
+                      Icons.pending_actions,
+                      size: 64,
+                      color: Colors.grey,
+                    ),
                     const SizedBox(height: 16),
                     const Text(
                       'No pending booking requests.',
@@ -166,7 +190,8 @@ class _CheckState extends State<Check> {
               itemCount: bookings.length,
               itemBuilder: (context, index) {
                 final item = bookings[index];
-                final String status = item['status']?.toString().toLowerCase() ?? 'pending';
+                final String status =
+                    item['status']?.toString().toLowerCase() ?? 'pending';
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16.0),
@@ -254,22 +279,36 @@ class StatusCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+                      Icon(
+                        Icons.calendar_today,
+                        size: 16,
+                        color: Colors.grey[600],
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         date,
-                        style: const TextStyle(fontSize: 14, color: Colors.black87),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+                      Icon(
+                        Icons.access_time,
+                        size: 16,
+                        color: Colors.grey[600],
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         time,
-                        style: const TextStyle(fontSize: 14, color: Colors.black87),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
                       ),
                     ],
                   ),
@@ -287,11 +326,7 @@ class StatusCard extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.pending,
-                          size: 16,
-                          color: statusColor,
-                        ),
+                        Icon(Icons.pending, size: 16, color: statusColor),
                         const SizedBox(width: 6),
                         Text(
                           status.toUpperCase(),

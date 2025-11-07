@@ -9,7 +9,7 @@ class Bookrequest extends StatefulWidget {
   final Map<String, dynamic> roomData;
   final String userId;
   final String userRole;
-  
+
   const Bookrequest({
     super.key,
     required this.roomData,
@@ -25,7 +25,7 @@ class _BookrequestState extends State<Bookrequest> {
   DateTime? _selectedDate;
   int? _selectedSlotId;
   bool _isLoading = false;
-  final String serverIp = '192.168.1.36';
+  final String serverIp = '172.27.8.71';
 
   @override
   void initState() {
@@ -67,11 +67,11 @@ class _BookrequestState extends State<Bookrequest> {
   // ✅ ฟังก์ชันตรวจสอบ slot ที่จองได้สำหรับ Student
   bool _isSlotAvailableForBooking(dynamic slot) {
     if (widget.userRole != 'Users') return true;
-    
+
     final slotStatus = _getSlotStatus(slot);
     final slotLabel = _formatSlotLabel(slot);
     final DateTime now = DateTime.now();
-    
+
     // ต้องเป็น Free และยังไม่ผ่านเวลา
     if (slotStatus.toLowerCase() != 'free') return false;
     return _isFutureTimeSlot(slotLabel, now);
@@ -85,7 +85,7 @@ class _BookrequestState extends State<Bookrequest> {
       '13:00-15:00': 13,
       '15:00-17:00': 15,
     };
-    
+
     final startHour = timeMap[slotLabel];
     if (startHour == null) return true;
     return now.hour < startHour;
@@ -107,8 +107,8 @@ class _BookrequestState extends State<Bookrequest> {
     if (widget.userRole == 'Users') {
       final today = DateTime.now();
       final selected = _selectedDate!;
-      if (selected.year != today.year || 
-          selected.month != today.month || 
+      if (selected.year != today.year ||
+          selected.month != today.month ||
           selected.day != today.day) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -162,10 +162,7 @@ class _BookrequestState extends State<Bookrequest> {
         _isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -224,7 +221,9 @@ class _BookrequestState extends State<Bookrequest> {
                     const SizedBox(height: 8),
                     Text('Room ID: ${widget.roomData['Room_id']}'),
                     Text('User ID: ${widget.userId}'),
-                    Text('Role: ${widget.userRole}'), // ✅ แสดง role สำหรับ debug
+                    Text(
+                      'Role: ${widget.userRole}',
+                    ), // ✅ แสดง role สำหรับ debug
                   ],
                 ),
               ),
@@ -257,7 +256,9 @@ class _BookrequestState extends State<Bookrequest> {
                           Text(
                             _selectedDate == null
                                 ? 'Choose Date'
-                                : DateFormat('MMM d, yyyy').format(_selectedDate!),
+                                : DateFormat(
+                                    'MMM d, yyyy',
+                                  ).format(_selectedDate!),
                           ),
                         ],
                       ),
@@ -305,12 +306,12 @@ class _BookrequestState extends State<Bookrequest> {
                             final slotLabel = _formatSlotLabel(slot);
                             final slotId = _getSlotId(slot);
                             final slotStatus = _getSlotStatus(slot);
-                            
+
                             // ✅ ใช้ฟังก์ชันตรวจสอบสำหรับ Student
-                            final isAvailable = widget.userRole == 'Users' 
+                            final isAvailable = widget.userRole == 'Users'
                                 ? _isSlotAvailableForBooking(slot)
                                 : slotStatus.toLowerCase() == 'free';
-                                
+
                             final isSelected = _selectedSlotId == slotId;
 
                             return Card(
@@ -327,11 +328,16 @@ class _BookrequestState extends State<Bookrequest> {
                                 subtitle: Text(
                                   isAvailable ? 'Available' : 'Not Available',
                                   style: TextStyle(
-                                    color: isAvailable ? Colors.green : Colors.red,
+                                    color: isAvailable
+                                        ? Colors.green
+                                        : Colors.red,
                                   ),
                                 ),
                                 trailing: isSelected
-                                    ? const Icon(Icons.check_circle, color: Colors.green)
+                                    ? const Icon(
+                                        Icons.check_circle,
+                                        color: Colors.green,
+                                      )
                                     : null,
                                 onTap: isAvailable
                                     ? () {

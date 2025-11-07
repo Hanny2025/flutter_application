@@ -16,8 +16,8 @@ class History extends StatefulWidget {
 
 class _HistoryState extends State<History> {
   late Future<List<dynamic>> _historyFuture;
-  final String serverIp = '192.168.1.36';
-  
+  final String serverIp = '172.27.8.71';
+
   String _selectedFilter = 'All';
   final List<String> filters = const ['All', 'Approved', 'Rejected'];
 
@@ -28,18 +28,16 @@ class _HistoryState extends State<History> {
   }
 
   Future<List<dynamic>> fetchHistory() async {
-    final url = Uri.parse('http://$serverIp:3000/check?user_id=${widget.userId}');
-    
-   
-    
+    final url = Uri.parse(
+      'http://$serverIp:3000/check?user_id=${widget.userId}',
+    );
+
     try {
       final response = await http.get(url).timeout(const Duration(seconds: 10));
-      
-     
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as List<dynamic>;
-       
+
         return data;
       } else {
         throw Exception(
@@ -47,7 +45,6 @@ class _HistoryState extends State<History> {
         );
       }
     } catch (e) {
-      
       throw Exception('Failed to fetch history: $e');
     }
   }
@@ -94,9 +91,27 @@ class _HistoryState extends State<History> {
   String _formatDate(String? dateStr) {
     if (dateStr == null) return 'No Date';
     try {
+      // 1. แปลงสตริงให้เป็น DateTime
       final DateTime date = DateTime.parse(dateStr);
-      return DateFormat('MMM d, yyyy').format(date);
+
+      // 2. แปลงเป็นเวลาท้องถิ่นของอุปกรณ์ (สำคัญ!)
+      // ถ้า dateStr เป็น UTC, .toLocal() จะปรับวันที่/เวลา ให้ตรงกับ Timezone ของอุปกรณ์
+      final DateTime localDate = date.toLocal();
+
+      // 3. จัดรูปแบบเฉพาะวันที่
+      // DateFormat.yMMMd().format(localDate) จะดีกว่าเพราะรองรับ Locale
+      return DateFormat('MMM d, yyyy').format(localDate);
     } catch (e) {
+      // ในกรณีที่สตริงเป็นแค่ "YYYY-MM-DD" ที่ไม่มีเวลา
+      if (dateStr!.length <= 10) {
+        // ให้ใช้ DateFormat.yMMMd() เพื่อจัดการกับสตริงวันที่เท่านั้น
+        try {
+          final DateTime dateOnly = DateFormat('yyyy-MM-dd').parse(dateStr);
+          return DateFormat('MMM d, yyyy').format(dateOnly);
+        } catch (_) {
+          return dateStr;
+        }
+      }
       return dateStr;
     }
   }
@@ -146,7 +161,11 @@ class _HistoryState extends State<History> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                            const Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: Colors.red,
+                            ),
                             const SizedBox(height: 16),
                             Text(
                               'Error loading history:\n${snapshot.error}',
@@ -170,7 +189,11 @@ class _HistoryState extends State<History> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.history_toggle_off, size: 64, color: Colors.grey),
+                          const Icon(
+                            Icons.history_toggle_off,
+                            size: 64,
+                            color: Colors.grey,
+                          ),
                           const SizedBox(height: 16),
                           const Text(
                             'No booking history found.',
@@ -191,7 +214,8 @@ class _HistoryState extends State<History> {
 
                   // ✅ แสดงเฉพาะ approved และ rejected (ไม่แสดง pending)
                   final completedHistory = allHistory.where((item) {
-                    final status = item['status']?.toString().toLowerCase() ?? '';
+                    final status =
+                        item['status']?.toString().toLowerCase() ?? '';
                     return status == 'approved' || status == 'rejected';
                   }).toList();
 
@@ -201,7 +225,8 @@ class _HistoryState extends State<History> {
                     filteredList = completedHistory;
                   } else {
                     filteredList = completedHistory.where((item) {
-                      final status = item['status']?.toString().toLowerCase() ?? '';
+                      final status =
+                          item['status']?.toString().toLowerCase() ?? '';
                       return status == _selectedFilter.toLowerCase();
                     }).toList();
                   }
@@ -212,15 +237,18 @@ class _HistoryState extends State<History> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.filter_alt_off, size: 64, color: Colors.grey),
+                          const Icon(
+                            Icons.filter_alt_off,
+                            size: 64,
+                            color: Colors.grey,
+                          ),
                           const SizedBox(height: 16),
                           Text(
-                            'No ${
-                              _selectedFilter == 'All' 
-                                ? 'completed bookings' 
-                                : '$_selectedFilter bookings'
-                            } found.',
-                            style: const TextStyle(fontSize: 16, color: Colors.grey),
+                            'No ${_selectedFilter == 'All' ? 'completed bookings' : '$_selectedFilter bookings'} found.',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey,
+                            ),
                           ),
                         ],
                       ),
@@ -243,12 +271,14 @@ class _HistoryState extends State<History> {
                     itemCount: filteredList.length,
                     itemBuilder: (context, index) {
                       final item = filteredList[index];
-                      final String status = item['status']?.toString().toLowerCase() ?? 'unknown';
+                      final String status =
+                          item['status']?.toString().toLowerCase() ?? 'unknown';
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12.0),
                         child: HistoryCard(
-                          roomNumber: item['Room_name']?.toString() ?? 'No Name',
+                          roomNumber:
+                              item['Room_name']?.toString() ?? 'No Name',
                           date: _formatDate(item['booking_date']?.toString()),
                           time: item['Slot_label']?.toString() ?? 'N/A',
                           status: status,
@@ -372,22 +402,36 @@ class HistoryCard extends StatelessWidget {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+                          Icon(
+                            Icons.calendar_today,
+                            size: 16,
+                            color: Colors.grey[600],
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             date,
-                            style: const TextStyle(fontSize: 14, color: Colors.black87),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+                          Icon(
+                            Icons.access_time,
+                            size: 16,
+                            color: Colors.grey[600],
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             time,
-                            style: const TextStyle(fontSize: 14, color: Colors.black87),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
                           ),
                         ],
                       ),

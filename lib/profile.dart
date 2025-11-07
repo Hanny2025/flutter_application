@@ -29,9 +29,8 @@ class _ProfileState extends State<Profile> {
 
   Future<void> fetchUserData() async {
     try {
-   
       final response = await http.get(
-        Uri.parse("http://192.168.1.36:3000/get_user?user_id=${widget.userId}"),
+        Uri.parse("http://172.27.8.71:3000/get_user?user_id=${widget.userId}"),
       );
 
       print("Response status: ${response.statusCode}");
@@ -69,7 +68,10 @@ class _ProfileState extends State<Profile> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          title: const Text('Confirm Logout', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text(
+            'Confirm Logout',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: const Text('Are you sure you want to log out?'),
           actions: [
             TextButton(
@@ -86,7 +88,10 @@ class _ProfileState extends State<Profile> {
                 );
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text('Log Out', style: TextStyle(color: Colors.white)),
+              child: const Text(
+                'Log Out',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         );
@@ -104,46 +109,52 @@ class _ProfileState extends State<Profile> {
         centerTitle: true,
         title: const Text(
           'User',
-          style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text("Error: $errorMessage", style: const TextStyle(color: Colors.red)),
-                      const SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: fetchUserData,
-                        child: const Text('Retry'),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Error: $errorMessage",
+                    style: const TextStyle(color: Colors.red),
                   ),
-                )
-              : userData == null
-                  ? const Center(child: Text("No user data found"))
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          UserProfileCard(
-                            userId: userData!['User_id'].toString(),
-                            username: userData!['username'],
-                            position: userData!['role'],
-                          ),
-                          const SizedBox(height: 30),
-                          LogoutTile(onTap: _handleLogout),
-                        ],
-                      ),
-                    ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: fetchUserData,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            )
+          : userData == null
+          ? const Center(child: Text("No user data found"))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  UserProfileCard(
+                    userId: userData!['User_id'].toString(),
+                    username: userData!['username'],
+                    position: userData!['role'],
+                  ),
+                  const SizedBox(height: 30),
+                  LogoutTile(onTap: _handleLogout),
+                ],
+              ),
+            ),
     );
   }
 }
-
 
 class UserProfileCard extends StatelessWidget {
   final String userId;
@@ -181,7 +192,10 @@ class UserProfileCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('ID: $userId', style: const TextStyle(fontSize: 16, color: darkGrey)),
+              Text(
+                'ID: $userId',
+                style: const TextStyle(fontSize: 16, color: darkGrey),
+              ),
               const SizedBox(height: 4),
               Text(
                 'Username: $username',
@@ -192,7 +206,10 @@ class UserProfileCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              Text('Position: $position', style: const TextStyle(fontSize: 16, color: darkGrey)),
+              Text(
+                'Position: $position',
+                style: const TextStyle(fontSize: 16, color: darkGrey),
+              ),
             ],
           ),
         ],
@@ -200,8 +217,6 @@ class UserProfileCard extends StatelessWidget {
     );
   }
 }
-
-
 
 class LogoutTile extends StatelessWidget {
   final VoidCallback onTap;
@@ -226,7 +241,11 @@ class LogoutTile extends StatelessWidget {
                 SizedBox(width: 15),
                 Text(
                   'Log Out',
-                  style: TextStyle(fontSize: 18, color: Colors.red, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.red,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -236,5 +255,4 @@ class LogoutTile extends StatelessWidget {
       ),
     );
   }
-  
 }

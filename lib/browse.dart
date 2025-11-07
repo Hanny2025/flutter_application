@@ -45,7 +45,7 @@ class RoomCard extends StatelessWidget {
   // ✅ ฟังก์ชันตรวจสอบว่ามี slot ที่จองได้สำหรับ Student หรือไม่
   bool _hasAvailableSlots() {
     if (userRole != 'Users') return true;
-    
+
     final DateTime now = DateTime.now();
     return timeSlots.any((slot) {
       if (slot.status.toLowerCase() != 'free') return false;
@@ -61,10 +61,10 @@ class RoomCard extends StatelessWidget {
       '13:00-15:00': 13,
       '15:00-17:00': 15,
     };
-    
+
     final startHour = timeMap[slotLabel];
     if (startHour == null) return true;
-    
+
     final currentHour = now.hour;
     return currentHour < startHour;
   }
@@ -94,7 +94,11 @@ class RoomCard extends StatelessWidget {
                 height: 180,
                 color: Colors.grey[300],
                 child: Center(
-                  child: Icon(Icons.business, color: Colors.grey[600], size: 50),
+                  child: Icon(
+                    Icons.business,
+                    color: Colors.grey[600],
+                    size: 50,
+                  ),
                 ),
               ),
             ),
@@ -193,7 +197,11 @@ class HomeScreenContent extends StatefulWidget {
   final String userId;
   final String userRole;
 
-  const HomeScreenContent({super.key, required this.userId, required this.userRole});
+  const HomeScreenContent({
+    super.key,
+    required this.userId,
+    required this.userRole,
+  });
 
   @override
   State<HomeScreenContent> createState() => _HomeScreenContentState();
@@ -201,7 +209,7 @@ class HomeScreenContent extends StatefulWidget {
 
 class _HomeScreenContentState extends State<HomeScreenContent> {
   late Future<List<dynamic>> _roomsFuture;
-  final String serverIp = '192.168.1.36';
+  final String serverIp = '172.27.8.71';
 
   @override
   void initState() {
@@ -211,13 +219,17 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
 
   Future<List<dynamic>> fetchRooms() async {
     final String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    final url = Uri.parse('http://$serverIp:3000/rooms-with-status?date=$today');
+    final url = Uri.parse(
+      'http://$serverIp:3000/rooms-with-status?date=$today',
+    );
     try {
       final response = await http.get(url).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as List<dynamic>;
       } else {
-        throw Exception('Failed to load rooms (Status: ${response.statusCode})');
+        throw Exception(
+          'Failed to load rooms (Status: ${response.statusCode})',
+        );
       }
     } catch (e) {
       throw Exception('Failed to fetch rooms: $e');
@@ -225,14 +237,13 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
   }
 
   // ✅ ฟังก์ชันตรวจสอบเงื่อนไข Student (ทำงานเบื้องหลัง)
-   bool _isRoomAvailable(Map<String, dynamic> room) {
+  bool _isRoomAvailable(Map<String, dynamic> room) {
     final roomStatus = room['Room_status']?.toString().toLowerCase() ?? '';
-    
+
     // ✅ ใช้ค่า enum ใหม่: 'free', 'pending', 'disabled'
     // ✅ แสดงเฉพาะห้องที่มีสถานะ 'free' หรือ 'pending'
     return roomStatus == 'free' || roomStatus == 'pending';
   }
-  
 
   // ✅ ตรวจสอบว่า slot นี้ยังไม่ผ่านเวลา
   bool _isFutureTimeSlot(String slotLabel, DateTime now) {
@@ -242,10 +253,10 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
       '13:00-15:00': 13,
       '15:00-17:00': 15,
     };
-    
+
     final startHour = timeMap[slotLabel];
     if (startHour == null) return true;
-    
+
     final currentHour = now.hour;
     return currentHour < startHour;
   }
@@ -267,12 +278,12 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     }
   }
 
-   List<TimeSlot> _buildTimeSlots(List<dynamic> slotsData) {
+  List<TimeSlot> _buildTimeSlots(List<dynamic> slotsData) {
     List<TimeSlot> slots = [];
-    
+
     for (var slot in slotsData) {
       String status = slot['Slot_status'] as String? ?? 'Disabled';
-      
+
       slots.add(
         TimeSlot(
           slotId: slot['Slot_id'] as int? ?? 0,
@@ -290,8 +301,6 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
       _roomsFuture = fetchRooms();
     });
   }
-
-  
 
   @override
   Widget build(BuildContext context) {
@@ -363,7 +372,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
 class Browse extends StatefulWidget {
   final String userId;
   final String userRole;
-  
+
   const Browse({super.key, required this.userId, required this.userRole});
 
   @override
@@ -375,10 +384,7 @@ class _BrowseState extends State<Browse> {
 
   List<Widget> _buildWidgetOptions() {
     return <Widget>[
-      HomeScreenContent(
-        userId: widget.userId, 
-        userRole: widget.userRole,
-      ),
+      HomeScreenContent(userId: widget.userId, userRole: widget.userRole),
       Check(userId: widget.userId),
       History(userId: widget.userId),
       Profile(userId: widget.userId),
@@ -389,13 +395,16 @@ class _BrowseState extends State<Browse> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
-        index: _selectedIndex, 
+        index: _selectedIndex,
         children: _buildWidgetOptions(),
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.check_circle_outline), label: 'Check'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.check_circle_outline),
+            label: 'Check',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
         ],
