@@ -1,4 +1,4 @@
-// ...existing code...
+// ...existing imports
 import 'package:flutter/material.dart';
 import 'BottomNav.dart';
 
@@ -58,24 +58,43 @@ class _HistoryPageState extends State<HistoryPage> {
           ),
         ),
         centerTitle: true,
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: Row(
+              children: [
+                Icon(Icons.person_outline, color: Color.fromARGB(255, 157, 184, 198), size: 16,),
+                SizedBox(width: 6),
+                Text(
+                  'Manager Sam',
+                  style: TextStyle(color: Color.fromARGB(255, 157, 184, 198), fontSize: 10),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
+
+      // Body
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Filter buttons
+            // 🔹 Filter buttons (full width row)
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildFilterButton('All'),
-                _buildFilterButton('Approved'),
-                _buildFilterButton('Rejected'),
+                Expanded(child: _buildFilterButton('All')),
+                const SizedBox(width: 8),
+                Expanded(child: _buildFilterButton('Approved')),
+                const SizedBox(width: 8),
+                Expanded(child: _buildFilterButton('Rejected')),
               ],
             ),
             const SizedBox(height: 20),
 
-            // Booking cards
+            // 🔹 Booking cards
             Expanded(
               child: ListView.builder(
                 itemCount: filteredBookings.length,
@@ -132,40 +151,39 @@ class _HistoryPageState extends State<HistoryPage> {
         ),
       ),
 
-      // bottom navigation bar added
-      bottomNavigationBar: const Padding(
-        padding: EdgeInsets.only(bottom: 0),
-        child: AppBottomNavigationBar(currentIndex: 0),
-      ),
+      // Bottom navigation bar
+      bottomNavigationBar:
+          const AppBottomNavigationBar(currentIndex: 3), // History tab
     );
   }
 
-  // Filter Button Widget
+  // 🔹 Filter Button Widget (with checkmark)
   Widget _buildFilterButton(String label) {
     final bool isSelected = selectedFilter == label;
-    return ElevatedButton(
+    return ElevatedButton.icon(
       onPressed: () {
         setState(() {
           selectedFilter = label;
         });
       },
-      style: ElevatedButton.styleFrom(
-        backgroundColor:
-            isSelected ? Colors.grey.shade400 : Colors.grey.shade200,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      ),
-      child: Text(
+      icon: isSelected
+          ? const Icon(Icons.check, color: Colors.black, size: 18)
+          : const SizedBox.shrink(),
+      label: Text(
         label,
         style: TextStyle(
           color: Colors.black,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
       ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor:
+            isSelected ? Colors.grey.shade400 : Colors.grey.shade200,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      ),
     );
   }
 }
-// ...existing code...

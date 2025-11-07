@@ -36,7 +36,7 @@ class _Browse_LecturerState extends State<Browse_Lecturer> {
   // ข้อมูลตัวอย่างที่ใช้ Model 'Room'
   final List<Room> rooms = [
     Room(
-      imagePath: 'assets/images/room.jpg', // Path เดิมของคุณ
+      imagePath: 'Assets/images/room.jpg', // Path เดิมของคุณ
       title: 'Deluxe Twin Room',
       subtitle: '2 single beds • breakfast',
       maxText: 'Max 2 adults',
@@ -49,7 +49,7 @@ class _Browse_LecturerState extends State<Browse_Lecturer> {
       ],
     ),
     Room(
-      imagePath: 'assets/images/room.jpg', // Path เดิมของคุณ
+      imagePath: 'Assets/images/room.jpg', // Path เดิมของคุณ
       title: 'King Deluxe Room',
       subtitle: '1 king bed • breakfast • air',
       maxText: 'Max 1 adult',
@@ -62,7 +62,7 @@ class _Browse_LecturerState extends State<Browse_Lecturer> {
       ],
     ),
     Room(
-      imagePath: 'assets/images/room.jpg', // Path เดิมของคุณ
+      imagePath: 'Assets/images/room.jpg', // Path เดิมของคุณ
       title: 'Family Deluxe Room',
       subtitle: '1 queen bed • 1 single bed • breakfast',
       maxText: 'Max 3 adults',

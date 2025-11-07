@@ -63,7 +63,7 @@ class _LoginLecturerState extends State<LoginLecturer> {
                     topRight: Radius.circular(20),
                   ),
                   child: Image.asset(
-                    'assets/images/room.jpg',
+                    'Assets/images/room.jpg',
                     height: 250,
                     width: 380,
                     fit: BoxFit.cover,
