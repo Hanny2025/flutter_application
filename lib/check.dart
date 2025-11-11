@@ -16,7 +16,7 @@ class Check extends StatefulWidget {
 
 class _CheckState extends State<Check> {
   late Future<List<dynamic>> _bookingsFuture;
-  final String serverIp = '172.27.8.71';
+  final String serverIp = '172.25.57.119';
 
   @override
   void initState() {
@@ -103,6 +103,13 @@ class _CheckState extends State<Check> {
     });
   }
 
+  // Alias used by AppBar/other widgets for consistency with other pages
+  // Keeps the method signature synchronous (void) so it can be passed
+  // directly to IconButton.onPressed without type issues.
+  void _refreshRoomData() {
+    _refreshData();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -119,6 +126,16 @@ class _CheckState extends State<Check> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              onPressed: _refreshRoomData,
+              tooltip: 'Refresh',
+            ),
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _refreshData,
@@ -147,11 +164,6 @@ class _CheckState extends State<Check> {
                         textAlign: TextAlign.center,
                         style: const TextStyle(color: Colors.red),
                       ),
-                      const SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: _refreshData,
-                        child: const Text('Retry'),
-                      ),
                     ],
                   ),
                 ),
@@ -174,10 +186,6 @@ class _CheckState extends State<Check> {
                       style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                     const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: _refreshData,
-                      child: const Text('Refresh'),
-                    ),
                   ],
                 ),
               );
@@ -239,108 +247,100 @@ class StatusCard extends StatelessWidget {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Full-width image at top
           ClipRRect(
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(10),
-              bottomLeft: Radius.circular(10),
+              topRight: Radius.circular(10),
             ),
             child: Image.asset(
               imageUrl,
-              width: 120,
-              height: 120,
+              width: double.infinity,
+              height: 200,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => Container(
-                width: 120,
-                height: 120,
+                width: double.infinity,
+                height: 200,
                 color: Colors.grey[300],
                 child: const Center(
-                  child: Icon(Icons.meeting_room, color: Colors.grey, size: 40),
+                  child: Icon(Icons.meeting_room, color: Colors.grey, size: 50),
                 ),
               ),
             ),
           ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    roomNumber,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: darkGrey,
-                    ),
+          // Details section below image
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  roomNumber,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: darkGrey,
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today,
-                        size: 16,
-                        color: Colors.grey[600],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.calendar_today, size: 18, color: primaryBlue),
+                    const SizedBox(width: 8),
+                    Text(
+                      date,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black87,
                       ),
-                      const SizedBox(width: 4),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.access_time, size: 18, color: primaryBlue),
+                    const SizedBox(width: 8),
+                    Text(
+                      time,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: backgroundColor,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: statusColor.withOpacity(0.5)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.pending, size: 18, color: statusColor),
+                      const SizedBox(width: 8),
                       Text(
-                        date,
-                        style: const TextStyle(
+                        status.toUpperCase(),
+                        style: TextStyle(
                           fontSize: 14,
-                          color: Colors.black87,
+                          fontWeight: FontWeight.bold,
+                          color: statusColor,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.access_time,
-                        size: 16,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        time,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: backgroundColor,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: statusColor.withOpacity(0.5)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.pending, size: 16, color: statusColor),
-                        const SizedBox(width: 6),
-                        Text(
-                          status.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: statusColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],

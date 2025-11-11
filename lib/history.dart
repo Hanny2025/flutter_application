@@ -16,7 +16,7 @@ class History extends StatefulWidget {
 
 class _HistoryState extends State<History> {
   late Future<List<dynamic>> _historyFuture;
-  final String serverIp = '172.27.8.71';
+  final String serverIp = '172.25.57.119';
 
   String _selectedFilter = 'All';
   final List<String> filters = const ['All', 'Approved', 'Rejected'];
@@ -51,6 +51,13 @@ class _HistoryState extends State<History> {
 
   // ✅ เพิ่มฟังก์ชันรีเฟรชข้อมูล
   Future<void> _refreshData() async {
+    setState(() {
+      _historyFuture = fetchHistory();
+    });
+  }
+
+  // Alias to match other screens' handler name
+  void _refreshRoomData() {
     setState(() {
       _historyFuture = fetchHistory();
     });
@@ -103,7 +110,7 @@ class _HistoryState extends State<History> {
       return DateFormat('MMM d, yyyy').format(localDate);
     } catch (e) {
       // ในกรณีที่สตริงเป็นแค่ "YYYY-MM-DD" ที่ไม่มีเวลา
-      if (dateStr!.length <= 10) {
+      if (dateStr.length <= 10) {
         // ให้ใช้ DateFormat.yMMMd() เพื่อจัดการกับสตริงวันที่เท่านั้น
         try {
           final DateTime dateOnly = DateFormat('yyyy-MM-dd').parse(dateStr);
@@ -132,6 +139,16 @@ class _HistoryState extends State<History> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              onPressed: _refreshRoomData,
+              tooltip: 'Refresh',
+            ),
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _refreshData,
@@ -172,11 +189,6 @@ class _HistoryState extends State<History> {
                               textAlign: TextAlign.center,
                               style: const TextStyle(color: Colors.red),
                             ),
-                            const SizedBox(height: 20),
-                            ElevatedButton(
-                              onPressed: _refreshData,
-                              child: const Text('Retry'),
-                            ),
                           ],
                         ),
                       ),
@@ -198,11 +210,6 @@ class _HistoryState extends State<History> {
                           const Text(
                             'No booking history found.',
                             style: TextStyle(fontSize: 16, color: Colors.grey),
-                          ),
-                          const SizedBox(height: 20),
-                          ElevatedButton(
-                            onPressed: _refreshData,
-                            child: const Text('Refresh'),
                           ),
                         ],
                       ),
@@ -378,100 +385,127 @@ class HistoryCard extends StatelessWidget {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Full-width image at top
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(12),
+              topRight: Radius.circular(12),
+            ),
+            child: Image.asset(
+              'assets/imgs/room.jpg',
+              width: double.infinity,
+              height: 180,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                width: double.infinity,
+                height: 180,
+                color: Colors.grey[300],
+                child: const Center(
+                  child: Icon(Icons.meeting_room, color: Colors.grey, size: 50),
+                ),
+              ),
+            ),
+          ),
+          // Details section below image
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        roomNumber,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: darkGrey,
-                        ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            roomNumber,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: darkGrey,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                size: 16,
+                                color: Colors.grey[600],
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                date,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.access_time,
+                                size: 16,
+                                color: Colors.grey[600],
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                time,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      Row(
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: backgroundColor,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: statusColor.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            Icons.calendar_today,
+                            _getStatusIcon(status),
                             size: 16,
-                            color: Colors.grey[600],
+                            color: statusColor,
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            date,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.black87,
+                            status.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: statusColor,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.access_time,
-                            size: 16,
-                            color: Colors.grey[600],
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            time,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: backgroundColor,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: statusColor.withOpacity(0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _getStatusIcon(status),
-                        size: 16,
-                        color: statusColor,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        status.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: statusColor,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -209,7 +209,7 @@ class HomeScreenContent extends StatefulWidget {
 
 class _HomeScreenContentState extends State<HomeScreenContent> {
   late Future<List<dynamic>> _roomsFuture;
-  final String serverIp = '172.27.8.71';
+  final String serverIp = '172.25.57.119';
 
   @override
   void initState() {
@@ -224,8 +224,12 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
     );
     try {
       final response = await http.get(url).timeout(const Duration(seconds: 10));
+      // Debug: log fetch result
+      debugPrint('GET rooms -> url:$url status:${response.statusCode}');
       if (response.statusCode == 200) {
-        return jsonDecode(response.body) as List<dynamic>;
+        final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+        debugPrint('GET rooms -> received ${data.length} rooms');
+        return data;
       } else {
         throw Exception(
           'Failed to load rooms (Status: ${response.statusCode})',
@@ -318,6 +322,16 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              onPressed: _refreshRoomData,
+              tooltip: 'Refresh',
+            ),
+          ),
+        ],
       ),
       body: FutureBuilder<List<dynamic>>(
         future: _roomsFuture,
@@ -343,25 +357,55 @@ class _HomeScreenContentState extends State<HomeScreenContent> {
 
           final List<dynamic> rooms = snapshot.data!;
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16.0),
-            itemCount: rooms.length,
-            itemBuilder: (context, index) {
-              final room = rooms[index];
-              final List<TimeSlot> slots = _buildTimeSlots(room['slots'] ?? []);
-
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: RoomCard(
-                  roomName: room['Room_name'] ?? 'No Name',
-                  timeSlots: slots,
-                  roomData: room,
-                  userId: widget.userId,
-                  userRole: widget.userRole, // ✅ ส่ง userRole ไป
-                  onBookingComplete: _refreshRoomData,
+          return Column(
+            children: [
+              // Date header showing today's date
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.calendar_today,
+                      color: primaryBlue,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Today: ${DateFormat('EEEE, MMM d, yyyy').format(DateTime.now())}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: darkGrey,
+                      ),
+                    ),
+                  ],
                 ),
-              );
-            },
+              ),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16.0),
+                  itemCount: rooms.length,
+                  itemBuilder: (context, index) {
+                    final room = rooms[index];
+                    final List<TimeSlot> slots = _buildTimeSlots(
+                      room['slots'] ?? [],
+                    );
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: RoomCard(
+                        roomName: room['Room_name'] ?? 'No Name',
+                        timeSlots: slots,
+                        roomData: room,
+                        userId: widget.userId,
+                        userRole: widget.userRole, // ✅ ส่ง userRole ไป
+                        onBookingComplete: _refreshRoomData,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           );
         },
       ),

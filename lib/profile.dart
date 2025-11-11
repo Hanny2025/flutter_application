@@ -30,7 +30,9 @@ class _ProfileState extends State<Profile> {
   Future<void> fetchUserData() async {
     try {
       final response = await http.get(
-        Uri.parse("http://172.27.8.71:3000/get_user?user_id=${widget.userId}"),
+        Uri.parse(
+          "http://172.25.57.119:3000/get_user?user_id=${widget.userId}",
+        ),
       );
 
       print("Response status: ${response.statusCode}");

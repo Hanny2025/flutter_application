@@ -25,7 +25,7 @@ class _BookrequestState extends State<Bookrequest> {
   DateTime? _selectedDate;
   int? _selectedSlotId;
   bool _isLoading = false;
-  final String serverIp = '172.27.8.71';
+  final String serverIp = '172.25.57.119';
 
   @override
   void initState() {
@@ -35,32 +35,6 @@ class _BookrequestState extends State<Bookrequest> {
       _selectedDate = DateTime.now();
     } else {
       _selectedDate = DateTime.now(); // Staff/Lecturer ยังใช้วันนี้เป็น default
-    }
-  }
-
-  Future<void> _selectDate(BuildContext context) async {
-    // ✅ สำหรับ Student: ไม่ให้เลือกวันที่อื่น
-    if (widget.userRole == 'Users') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Students can only book for today'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    // ✅ Staff/Lecturer: เลือกวันที่ได้ตามปกติ
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 30)),
-    );
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
     }
   }
 
@@ -125,6 +99,10 @@ class _BookrequestState extends State<Bookrequest> {
     });
 
     try {
+      // Debug: log outgoing booking
+      debugPrint(
+        'Booking POST -> room:${widget.roomData['Room_id']} slot:$_selectedSlotId date:${DateFormat('yyyy-MM-dd').format(_selectedDate!)} user:${widget.userId}',
+      );
       final response = await http.post(
         Uri.parse('http://$serverIp:3000/bookings'),
         headers: {'Content-Type': 'application/json'},
@@ -134,6 +112,11 @@ class _BookrequestState extends State<Bookrequest> {
           'user_id': int.parse(widget.userId),
           'booking_date': DateFormat('yyyy-MM-dd').format(_selectedDate!),
         }),
+      );
+
+      // Debug: log response status and body
+      debugPrint(
+        'Booking POST response -> status:${response.statusCode} body:${response.body}',
       );
 
       setState(() {
@@ -147,12 +130,38 @@ class _BookrequestState extends State<Bookrequest> {
             backgroundColor: Colors.green,
           ),
         );
+        // Try to fetch latest room statuses so parent can refresh with up-to-date data
+        try {
+          final String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+          final roomsUrl = Uri.parse('http://$serverIp:3000/rooms-with-status?date=$today');
+          final roomsResp = await http.get(roomsUrl).timeout(const Duration(seconds: 10));
+          debugPrint('Post-success: fetched rooms -> status:${roomsResp.statusCode}');
+        } catch (e) {
+          debugPrint('Post-success: error fetching rooms after booking -> $e');
+        }
+
         Navigator.pop(context, true);
       } else {
-        final errorData = json.decode(response.body);
+        // Try to extract a helpful error message from the server response.
+        String message;
+        try {
+          final parsed = json.decode(response.body);
+          if (parsed is Map && parsed['message'] != null) {
+            message = parsed['message'].toString();
+          } else {
+            // If the JSON doesn't have 'message', fall back to full body
+            message = response.body.toString();
+          }
+        } catch (_) {
+          // Non-JSON response (plain text). Show raw body.
+          message = response.body.toString();
+        }
+
+        debugPrint('Booking failed -> status:${response.statusCode} body:${response.body}');
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorData['message'] ?? 'Booking failed'),
+            content: Text(message.isNotEmpty ? message : 'Booking failed'),
             backgroundColor: Colors.red,
           ),
         );
@@ -246,22 +255,18 @@ class _BookrequestState extends State<Bookrequest> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    ElevatedButton(
-                      onPressed: () => _selectDate(context),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.calendar_today),
-                          const SizedBox(width: 8),
-                          Text(
-                            _selectedDate == null
-                                ? 'Choose Date'
-                                : DateFormat(
-                                    'MMM d, yyyy',
-                                  ).format(_selectedDate!),
-                          ),
-                        ],
-                      ),
+                    // แสดงวันที่เป็นวันนี้เท่านั้น (ไม่มีปุ่มเลือกวันที่)
+                    Row(
+                      children: [
+                        Icon(Icons.calendar_today, color: Colors.grey[700]),
+                        const SizedBox(width: 8),
+                        Text(
+                          DateFormat(
+                            'MMM d, yyyy',
+                          ).format(_selectedDate ?? DateTime.now()),
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ],
                     ),
                     // ✅ แสดงข้อความสำหรับ Student
                     if (widget.userRole == 'Users') ...[
