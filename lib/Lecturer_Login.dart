@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
-import 'Lecturer_Browse.dart';
-import 'Lecturer_DashBoard.dart';
+import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+// import 'Lecturer_Browse.dart'; // (ไม่จำเป็นต้อง import ถ้าใช้ named route)
+import 'Lecturer_DashBoard.dart'; // (ไม่จำเป็นต้อง import ถ้าใช้ named route)
+
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+const Color primaryBlue = Color(0xFF1976D2);
 
 class LoginLecturer extends StatefulWidget {
   const LoginLecturer({super.key});
@@ -16,6 +23,8 @@ class _LoginLecturerState extends State<LoginLecturer> {
   bool _obscure = true;
   bool _loading = false;
 
+  final RegExp _thaiPattern = RegExp(r'[ก-๙]');
+
   @override
   void dispose() {
     _usernameController.dispose();
@@ -26,15 +35,84 @@ class _LoginLecturerState extends State<LoginLecturer> {
   Future<void> _onLogin() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
-    await Future.delayed(const Duration(milliseconds: 900));
 
-    if (!mounted) return;
-    setState(() => _loading = false);
+    try {
+      final username = _usernameController.text;
+      final password = _passwordController.text;
 
-    // ✅ นำทางไปหน้า BrowseRoom
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const DashboardPage()),
+      final fullUrl = 'http://10.2.21.252:3000/login';
+      final body = jsonEncode({'username': username, 'password': password});
+
+      final response = await http
+          .post(
+            Uri.parse(fullUrl),
+            headers: {'Content-Type': 'application/json; charset=UTF-8'},
+            body: body,
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (!mounted) return;
+
+      // ✅ ตรวจสอบ response อย่างถูกต้อง
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('✅ Login successful: $data');
+
+        // ✅ ตรวจสอบว่ามี user object และ User_id
+        if (data['user'] != null && data['user']['User_id'] != null) {
+          // --- 🌟 (1) ดึงข้อมูลผู้ใช้ ---
+          // ⚠️ (สำคัญ) ดึง ID เป็น int เพราะ UserPage คาดหวัง int
+          final int userId = data['user']['User_id'];
+          final String username = data['user']['username'] ?? 'No Username';
+          final String userRole =
+              data['user']['role']?.toString() ?? 'Lecturer';
+
+          // --- 🌟 (2) บันทึกข้อมูลลง SharedPreferences ---
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setInt('user_id', userId);
+          await prefs.setString('username', username);
+          await prefs.setString('role', userRole);
+
+          print('✅ User ID $userId ($username) SAVED. Navigating to Home...');
+
+          if (!mounted) return; // 🌟 (เพิ่ม) ตรวจสอบ mounted ก่อนนำทาง
+
+          // --- 🌟 (3) นำทางไปหน้าแรก (Home/Dashboard) ---
+          // (ใช้ named route '/' เพื่อให้ BottomNav ทำงานถูกต้อง)
+          Navigator.pushReplacementNamed(context, '/');
+        } else {
+          print(' User data missing in response');
+          _showErrorSnackBar('Login successful but user data is missing');
+        }
+      } else {
+        String errorMessage = 'Invalid username or password';
+        try {
+          final errorData = json.decode(response.body);
+          if (errorData['message'] != null) {
+            errorMessage = errorData['message'];
+          }
+        } catch (e) {}
+
+        _showErrorSnackBar(errorMessage);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      print(' Login error: $e');
+      _showErrorSnackBar('Could not connect to server. Please try again.');
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
@@ -53,10 +131,8 @@ class _LoginLecturerState extends State<LoginLecturer> {
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-
               children: [
                 const SizedBox(height: 60),
-
                 ClipRRect(
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),

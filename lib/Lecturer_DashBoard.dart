@@ -1,116 +1,172 @@
 import 'package:flutter/material.dart';
-import 'BottomNav.dart';
+import 'BottomNav.dart'; // (ตรวจสอบว่าไฟล์นี้มีอยู่จริง)
+import 'package:http/http.dart' as http; // 1. 👈 Import HTTP
+import 'dart:convert'; // 2. 👈 Import 'dart:convert'
 
-class DashboardPage extends StatelessWidget {
+// ------------------------------------
+// 1. หน้า Dashboard (เปลี่ยนเป็น StatefulWidget)
+// ------------------------------------
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  // 3. 👈 เพิ่มตัวแปรสำหรับ "จดจำ" สถานะ
+  Map<String, dynamic>? _summaryData;
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  // 4. 👈 เรียกฟังก์ชันดึงข้อมูลตอนเปิดหน้า
+  @override
+  void initState() {
+    super.initState();
+    _fetchSummary();
+  }
+
+  // 5. 👈 ฟังก์ชันสำหรับดึง API (เหมือนใน Lecturer_req)
+  Future<void> _fetchSummary() async {
+    // ⚠️ ถ้าทดสอบใน Android Emulator ให้ใช้ 10.0.2.2
+    // ⚠️ ถ้าทดสอบใน iOS Simulator หรือ Web ให้ใช้ localhost
+    const String apiUrl = 'http://10.2.21.252:3000/api/dashboard/summary';
+    // const String apiUrl = 'http://localhost:3000/api/dashboard/summary';
+
+    // (ตั้งค่า _isLoading = true เมื่อเริ่มดึง)
+    setStateIfMounted(() {
+      _isLoading = true;
+      _errorMessage = null; // ล้าง error เก่า
+    });
+
+    try {
+      final response = await http.get(Uri.parse(apiUrl));
+
+      if (response.statusCode == 200) {
+        // ถ้าสำเร็จ: บันทึกข้อมูล
+        setStateIfMounted(() {
+          _summaryData = json.decode(response.body);
+          _isLoading = false;
+        });
+      } else {
+        // ถ้า Server มีปัญหา
+        setStateIfMounted(() {
+          _errorMessage =
+              'Failed to load summary (Code: ${response.statusCode})';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      // ถ้าเชื่อมต่อไม่ได้ (เช่น ลืมเปิด Backend, ไม่มีเน็ต)
+      setStateIfMounted(() {
+        _errorMessage = 'Error connecting to server: ${e.toString()}';
+        _isLoading = false;
+      });
+    }
+  }
+
+  // (Helper function กัน error เวลาปิดหน้า)
+  void setStateIfMounted(VoidCallback fn) {
+    if (mounted) {
+      setState(fn);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-
-      // ──────────────── AppBar ────────────────
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D47A1),
         title: const Text(
           'Dashboard',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
+        backgroundColor: const Color.fromARGB(255, 0, 62, 195),
         centerTitle: true,
       ),
+      // --- (6) 👈 body เปลี่ยนเป็น RefreshIndicator ---
+      // (เพื่อให้ผู้ใช้ "ดึงเพื่อโหลดใหม่" ได้)
+      body: RefreshIndicator(
+        onRefresh: _fetchSummary, // 👈 สั่งให้ดึงข้อมูลใหม่
+        child: _buildBodyContent(), // 👈 เรียก Widget ที่แสดงผลจริง
+      ),
+      bottomNavigationBar: const AppBottomNavigationBar(currentIndex: 0),
+    );
+  }
 
-      // ──────────────── Body ────────────────
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  // --- (7) 👈 สร้าง Widget ที่แสดงผลจริง ---
+  // (แยกออกมาเพื่อจัดการ Loading / Error)
+  Widget _buildBodyContent() {
+    if (_isLoading) {
+      // 7.1 ถ้ากำลังโหลด
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_errorMessage != null) {
+      // 7.2 ถ้ามี Error
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            'Error: $_errorMessage\n\nPlease check your Backend server and pull to refresh.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.red, fontSize: 16),
+          ),
+        ),
+      );
+    }
+
+    if (_summaryData == null) {
+      // 7.3 ถ้าไม่มีข้อมูล (ไม่ควรเกิด แต่กันไว้)
+      return const Center(child: Text('No data found.'));
+    }
+
+    // 7.4 ถ้าสำเร็จ: แสดงผลการ์ด
+    return ListView(
+      // (RefreshIndicator ต้องใช้กับ Scrollable)
+      padding: const EdgeInsets.all(16.0),
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ───── Room Summary ─────
-            Row(
-              children: const [
-                Expanded(
-                  child: SummaryCard(
-                    number: '25',
-                    title: 'Total\nRooms',
-                    color: Color(0xFF2196F3),
-                  ),
-                ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: SummaryCard(
-                    number: '12',
-                    title: 'Free\nRooms',
-                    color: Color(0xFF4CAF50),
-                  ),
-                ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: SummaryCard(
-                    number: '9',
-                    title: 'Reserved',
-                    color: Color(0xFFFFC107),
-                  ),
-                ),
-              ],
+            // --- (8) 👈 เชื่อมข้อมูลจริงเข้า SummaryCard ---
+            SummaryCard(
+              // ใช้ .toString() เพื่อกัน Error (เหมือนที่เราแก้ใน Lecturer_req)
+              number: _summaryData!['totalSlots'].toString(),
+              title: 'Total Slots',
+              color: const Color(0xFF2196F3),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
 
-            // ───── Disable Room ─────
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(
-                vertical: 10,
-              ), // 🔹 เพิ่มระยะห่างด้านบน/ล่าง
-              padding: const EdgeInsets.symmetric(
-                vertical: 26,
-                horizontal: 16,
-              ), // 🔹 เพิ่ม padding ด้านใน
-              decoration: BoxDecoration(
-                color: Colors.redAccent,
-                borderRadius: BorderRadius.circular(
-                  16,
-                ), // 🔹 เพิ่มความโค้งเล็กน้อยให้สมดุล
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.redAccent.withOpacity(0.4),
-                    blurRadius: 8,
-                    offset: const Offset(2, 4),
-                  ),
-                ],
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Disable Rooms',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    '4',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
+            SummaryCard(
+              number: _summaryData!['freeSlots'].toString(),
+              title: 'Free Slots (Today)',
+              color: const Color(0xFF4CAF50),
+            ),
+            const SizedBox(height: 10),
+
+            SummaryCard(
+              number: _summaryData!['pendingSlots'].toString(),
+              title: 'Pending Slots',
+              color: const Color(0xFFFFC107),
+            ),
+            const SizedBox(height: 10),
+
+            SummaryCard(
+              number: _summaryData!['disabledRooms'].toString(),
+              title: 'Disable Rooms',
+              color: Colors.redAccent,
             ),
           ],
         ),
-      ),
-
-      // ──────────────── Bottom Navigation ────────────────
-      bottomNavigationBar: const AppBottomNavigationBar(currentIndex: 0),
+      ],
     );
   }
 }
 
-// ──────────────── Summary Card ────────────────
+// ------------------------------------
+// 2. Class SummaryCard (แม่แบบการ์ด)
+// (ไม่ต้องแก้ไข - ใช้เหมือนเดิม)
+// ------------------------------------
 class SummaryCard extends StatelessWidget {
   final String number;
   final String title;
@@ -126,42 +182,35 @@ class SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 100, // 🔼 เพิ่มความสูงขึ้นเล็กน้อย
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.35),
-            blurRadius: 6,
-            offset: const Offset(2, 3),
+            color: color.withOpacity(0.4),
+            blurRadius: 8,
+            offset: const Offset(2, 4),
           ),
         ],
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 19,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           Text(
             number,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 26,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
-              height: 1.0,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Flexible(
-            child: Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13, // 🔽 ลดขนาดเล็กน้อย
-                fontWeight: FontWeight.w500,
-                height: 1.1,
-              ),
             ),
           ),
         ],
