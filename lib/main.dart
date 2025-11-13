@@ -30,13 +30,13 @@ class MyApp extends StatelessWidget {
 
       // 🗺️ เส้นทางทั้งหมดในแอป
       routes: {
-        '/login': (context) => const Login(),
-        '/browse': (context) => const BrowseRoom(),
+        '/login': (context) => const UserPage(),
+        '/browse': (context) => const RoomsPage(),
         '/manage': (context) => const ManageBooking(),
-        '/addRoom': (context) => const AddRoomScreen(),
-        '/editRoom': (context) => const EditRoomScreen(),
-        '/history': (context) => const BookingHistoryScreen(),
-        '/dashboard': (context) => const DashboardScreen(),
+        '/addRoom': (context) => const AddRoomPage(),
+        '/editRoom': (context) => const EditRoomListPage(),
+        '/history': (context) => const BookingHistoryPage(),
+        '/dashboard': (context) => const DashboardPage(),
       },
     );
   }

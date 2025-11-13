@@ -1,326 +1,469 @@
 import 'package:flutter/material.dart';
 
-/// ===== Enum + helper (ใช้ร่วมกับ AddRoom ได้) =====
-enum RoomStatus { free, reserved, pending, disabled }
 
-String statusLabel(RoomStatus s) => switch (s) {
-  RoomStatus.free => 'Free',
-  RoomStatus.reserved => 'Reserved',
-  RoomStatus.pending => 'Pending',
-  RoomStatus.disabled => 'Disabled',
-};
+// --------------------------------------------------------
+// PAGE 1: Edit Room List Page
+// --------------------------------------------------------
+class EditRoomListPage extends StatefulWidget {
+  const EditRoomListPage({super.key});
 
-Color statusColor(RoomStatus s) => switch (s) {
-  RoomStatus.free => Colors.green,
-  RoomStatus.reserved => Colors.red,
-  RoomStatus.pending => Colors.orange,
-  RoomStatus.disabled => Colors.grey,
-};
-
-/// ===== EditRoomScreen =====
-/// รองรับค่าเริ่มต้น (เช่นโหลดจาก DB มาก่อน) ผ่าน constructor
-class EditRoomScreen extends StatefulWidget {
-  const EditRoomScreen({
-    super.key,
-    this.roomId,
-    this.initialName = 'Deluxe Twin Room',
-    this.initialDesc = '2 single beds • breakfast • air-conditioned',
-    this.initialStatus = RoomStatus.free,
-    this.initialImagePath,
-  });
-
-  final String? roomId;
-  final String initialName;
-  final String initialDesc;
-  final RoomStatus initialStatus;
-  final String? initialImagePath;
 
   @override
-  State<EditRoomScreen> createState() => _EditRoomScreenState();
+  State<EditRoomListPage> createState() => _EditRoomListPageState();
 }
 
-class _EditRoomScreenState extends State<EditRoomScreen> {
-  late final TextEditingController _nameCtrl;
-  late final TextEditingController _descCtrl;
 
-  // single source of truth
-  late RoomStatus _status;
-  String? _imagePath;
+class _EditRoomListPageState extends State<EditRoomListPage> {
+  final TextEditingController _searchController = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    _nameCtrl = TextEditingController(text: widget.initialName);
-    _descCtrl = TextEditingController(text: widget.initialDesc);
-    _status = widget.initialStatus;
-    _imagePath = widget.initialImagePath;
-  }
 
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _descCtrl.dispose();
-    super.dispose();
-  }
+  final List<Map<String, dynamic>> rooms = [
+    {
+      "roomName": "Room 111 Family Deluxe",
+      "status": "Free",
+      "image": ""
+    },
+    {
+      "roomName": "Room 222 King Deluxe",
+      "status": "Reserved",
+      "image": ""
+    },
+    {
+      "roomName": "Room 333 Deluxe Twin",
+      "status": "Disabled",
+      "image": ""
+    },
+  ];
 
-  OutlineInputBorder _rounded([Color? color]) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: color ?? Colors.grey.shade400),
-      );
 
-  void _saveChanges() {
-    // TODO: ส่งข้อมูลไป backend / JSON-Server / MySQL
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Changes saved!\n'
-          'ID: ${widget.roomId ?? "-"}\n'
-          'Name: ${_nameCtrl.text}\n'
-          'Desc: ${_descCtrl.text}\n'
-          'Status: ${statusLabel(_status)}\n'
-          'Image: ${_imagePath ?? "-"}',
-        ),
-      ),
-    );
-  }
+  String searchText = "";
+
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Colors.blue.shade800;
+    List<Map<String, dynamic>> filteredRooms = rooms
+        .where((room) =>
+            room["roomName"].toLowerCase().contains(searchText.toLowerCase()))
+        .toList();
+
 
     return Scaffold(
-      backgroundColor: const Color(0xFFE7F7FF),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: primaryColor,
         title: const Text(
-          'Manage Booking',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          "Edit Room List",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
         centerTitle: true,
+        backgroundColor: const Color(0xFF1E63F3),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.blue.shade700,
-        unselectedItemColor: Colors.black,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.assignment_outlined), label: 'Requested'),
-          BottomNavigationBarItem(icon: Icon(Icons.check_box_outlined), label: 'Check'),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'User'),
-        ],
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 16,
-            bottom: 16 + MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ปุ่ม Edit Room ด้านบน (เหลืองพาสเทล)
-              SizedBox(
-                width: double.infinity,
-                child: Material(
-                  color: Colors.yellow.shade400,
-                  elevation: 3,
-                  borderRadius: BorderRadius.circular(12),
-                  child: InkWell(
-                    onTap: () {},
-                    borderRadius: BorderRadius.circular(12),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 14, horizontal: 18),
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit, color: Colors.black87, size: 24),
-                          SizedBox(width: 12),
-                          Text(
-                            'Edit Room',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+
+
+      body: Column(
+        children: [
+          // 🔍 Search bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  searchText = value;
+                });
+              },
+              decoration: InputDecoration(
+                hintText: "search room...",
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: const Color(0xFFF0F0F0),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
                 ),
               ),
-              const SizedBox(height: 20),
+            ),
+          ),
 
-              // Room Pictures
-              const Text('Room Pictures',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 8),
-              InkWell(
-                onTap: () async {
-                  // TODO: ใช้ image_picker เปิดแกลเลอรีจริง
-                  setState(() => _imagePath = 'DEMO_EDIT.jpg'); // demo
-                },
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  height: 120,
-                  width: double.infinity,
+
+          Expanded(
+            child: ListView.builder(
+              itemCount: filteredRooms.length,
+              padding: const EdgeInsets.all(10),
+              itemBuilder: (context, index) {
+                final room = filteredRooms[index];
+                final status = room["status"];
+                Color statusColor;
+
+
+                switch (status) {
+                  case "Free":
+                    statusColor = Colors.green;
+                    break;
+                  case "Reserved":
+                    statusColor = Colors.orange;
+                    break;
+                  default:
+                    statusColor = Colors.red;
+                }
+
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.grey.shade400),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      )
+                    ],
                   ),
+                  child: Row(
+                    children: [
+                      // 📷 Placeholder รูป
+                      Container(
+                        width: 100,
+                        height: 80,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFEAEAEA),
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(10),
+                            bottomLeft: Radius.circular(10),
+                          ),
+                        ),
+                        child: room["image"] == ""
+                            ? const Icon(Icons.image_not_supported_outlined,
+                                color: Colors.black45, size: 40)
+                            : ClipRRect(
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(10),
+                                  bottomLeft: Radius.circular(10),
+                                ),
+                                child: Image.network(
+                                  room["image"],
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                      ),
+
+
+                      // 📝 ข้อมูลห้อง
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                room["roomName"],
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  const Text(
+                                    "status : ",
+                                    style: TextStyle(fontSize: 14),
+                                  ),
+                                  Text(
+                                    status,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: statusColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+
+                      // ✏️ ⭐ ปุ่ม Edit
+                      Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const EditRoomPage(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.edit, size: 18),
+                          label: const Text("Edit"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.yellow[600],
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                            textStyle: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+
+
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: const Color(0xFF1E63F3),
+        unselectedItemColor: Colors.grey,
+        currentIndex: 1,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.edit), label: 'Edit'),
+          BottomNavigationBarItem(icon: Icon(Icons.add_box_outlined), label: 'Add'),
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
+        ],
+      ),
+    );
+  }
+}
+
+
+// --------------------------------------------------------
+// PAGE 2: Edit Room Page
+// --------------------------------------------------------
+class EditRoomPage extends StatefulWidget {
+  const EditRoomPage({super.key});
+
+
+  @override
+  State<EditRoomPage> createState() => _EditRoomPageState();
+}
+
+
+class _EditRoomPageState extends State<EditRoomPage> {
+  String selectedStatus = "Free";
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text(
+          "Edit Room",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        backgroundColor: const Color(0xFF1E63F3),
+      ),
+
+
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 🔶 Edit Room Button
+            Center(
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.edit, color: Colors.black),
+                  label: const Text(
+                    "Edit Room",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.yellow[600],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    elevation: 2,
+                  ),
+                ),
+              ),
+            ),
+
+
+            const SizedBox(height: 20),
+
+
+            // 🖼 Room Pictures
+            const Text(
+              "Room Pictures",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
+            ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () {},
+              child: Container(
+                height: 120,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.black54, width: 1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        _imagePath == null ? Icons.image_outlined : Icons.check_circle,
-                        size: 40,
-                        color: _imagePath == null ? Colors.grey : Colors.green,
-                      ),
+                      Icon(Icons.image_outlined,
+                          size: 40, color: Colors.black54),
+                      SizedBox(height: 5),
                       Text(
-                        _imagePath == null ? 'Tap to upload room picture' : 'Image selected',
-                        style: TextStyle(
-                          color: _imagePath == null ? Colors.grey : Colors.green,
-                        ),
+                        "Tap to upload room picture",
+                        style: TextStyle(color: Colors.black54),
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+            ),
 
-              // Room name
-              const Text('Room name',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _nameCtrl,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-                  border: _rounded(),
-                  enabledBorder: _rounded(),
-                  focusedBorder: _rounded(Colors.blue.shade600),
-                ),
+
+            const SizedBox(height: 20),
+
+
+            // 🏷 Room Name
+            const Text(
+              "Room name",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+            const SizedBox(height: 6),
+            TextField(
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.white,
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              const SizedBox(height: 20),
+            ),
 
-              // Room Description
-              const Text('Room Description',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _descCtrl,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-                  border: _rounded(),
-                  enabledBorder: _rounded(),
-                  focusedBorder: _rounded(Colors.blue.shade600),
-                ),
+
+            const SizedBox(height: 16),
+
+
+            // 📝 Description
+            const Text(
+              "Room Description",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+            const SizedBox(height: 6),
+            TextField(
+              maxLines: 2,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.white,
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              const SizedBox(height: 20),
+            ),
 
-              // Room Status (Dropdown)
-              const Text('Room Status',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.grey.shade400),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<RoomStatus>(
-                    value: _status,
-                    isExpanded: true,
-                    icon: const Icon(Icons.keyboard_arrow_down),
-                    items: RoomStatus.values.map((s) {
-                      return DropdownMenuItem(
-                        value: s,
-                        child: Row(
-                          children: [
-                            Icon(Icons.circle, size: 10, color: statusColor(s)),
-                            const SizedBox(width: 8),
-                            Text(statusLabel(s)),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (v) => setState(() => _status = v!),
+
+            const SizedBox(height: 16),
+
+
+            // ⚙️ Room Status
+            const Text(
+              "Room Status",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+            const SizedBox(height: 8),
+
+
+            DropdownButtonFormField<String>(
+              value: selectedStatus,
+              decoration: const InputDecoration(border: InputBorder.none),
+              items: const [
+                DropdownMenuItem(
+                  value: "Free",
+                  child: Row(
+                    children: [
+                      Icon(Icons.circle, color: Colors.green, size: 15),
+                      SizedBox(width: 8),
+                      Text("Free"),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-
-              // Room Status (Radio – sync กับ dropdown)
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                child: Column(
-                  children: [
-                    RadioListTile<RoomStatus>(
-                      value: RoomStatus.free,
-                      groupValue: _status,
-                      onChanged: (v) => setState(() => _status = v!),
-                      title: const Text('Free'),
-                      secondary:
-                          Icon(Icons.circle, size: 12, color: statusColor(RoomStatus.free)),
-                      activeColor: statusColor(RoomStatus.free),
-                    ),
-                    RadioListTile<RoomStatus>(
-                      value: RoomStatus.reserved,
-                      groupValue: _status,
-                      onChanged: (v) => setState(() => _status = v!),
-                      title: const Text('Reserved'),
-                      secondary: Icon(Icons.circle,
-                          size: 12, color: statusColor(RoomStatus.reserved)),
-                      activeColor: statusColor(RoomStatus.reserved),
-                    ),
-                    RadioListTile<RoomStatus>(
-                      value: RoomStatus.disabled,
-                      groupValue: _status,
-                      onChanged: (v) => setState(() => _status = v!),
-                      title: const Text('Disabled'),
-                      secondary: Icon(Icons.circle,
-                          size: 12, color: statusColor(RoomStatus.disabled)),
-                      activeColor: statusColor(RoomStatus.disabled),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Save Changes button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _saveChanges,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4A78F6),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Text(
-                    'Save Changes',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                DropdownMenuItem(
+                  value: "Reserved",
+                  child: Row(
+                    children: [
+                      Icon(Icons.circle, color: Colors.orange, size: 15),
+                      SizedBox(width: 8),
+                      Text("Reserved"),
+                    ],
                   ),
                 ),
+                DropdownMenuItem(
+                  value: "Disabled",
+                  child: Row(
+                    children: [
+                      Icon(Icons.circle, color: Colors.red, size: 15),
+                      SizedBox(width: 8),
+                      Text("Disabled"),
+                    ],
+                  ),
+                ),
+              ],
+              onChanged: (value) {
+                setState(() => selectedStatus = value!);
+              },
+            ),
+
+
+            const SizedBox(height: 30),
+
+
+            // 💾 Save Button
+            Center(
+              child: ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E63F3),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 90, vertical: 14),
+                ),
+                child: const Text(
+                  "Save Changes",
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
