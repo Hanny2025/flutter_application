@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
-import 'Lecturer_Check.dart'; // 👈 (จำเป็น) สำหรับการ Navigate
-
-// 🗑️ ลบ import Bottom_Nav.dart (ซ้ำซ้อน และหน้านี้ไม่ควรมี Nav)
-// import 'package:flutter_application/Bottom_Nav.dart';
-// import '../Bottom_Nav.dart';
-
+import 'Lecturer_Check.dart'; // 👈 (จำเป็น) สำหรับการ Navigate ไป CheckPage
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
@@ -18,7 +13,7 @@ class Lecturer_req extends StatefulWidget {
 
   const Lecturer_req({
     super.key,
-    required this.userId, // 👈 เพิ่ม required this.userId ตรงนี้
+    required this.userId, // 👈 required this.userId
   });
 
   @override
@@ -30,14 +25,8 @@ class Lecturer_req extends StatefulWidget {
 // ------------------------------------
 class _Lecturer_reqState extends State<Lecturer_req> {
   // --- 1. ตัวแปรที่ใช้ใน State นี้ ---
-  // 🗑️ ลบ Background_head (ตอนนี้ AppBar อยู่ที่ Browse_Lecturer)
-  // static const Color Background_head = Color.fromARGB(255, 0, 62, 195);
-
   List<Map<String, dynamic>> _requests = [];
   bool _isLoading = true;
-
-  // 🗑️ 2. ลบ _selectedIndex (หน้านี้ไม่ต้องมี Nav ของตัวเอง)
-  // int _selectedIndex = 0;
 
   // --- 2. ฟังก์ชันที่ทำงานตอนเริ่มต้น (initState) ---
   @override
@@ -48,49 +37,48 @@ class _Lecturer_reqState extends State<Lecturer_req> {
 
   // --- 3. ฟังก์ชันสำหรับดึงข้อมูลจาก API ---
   Future<void> _fetchRequests() async {
-    // ⭐️ 3. (แนะนำ) เราสามารถใช้ userId ที่รับมาเพื่อกรองข้อมูลได้
-    //    (ถ้า API ของคุณรองรับการกรอง)
-    //    ตัวอย่าง: '.../bookings/pending?lecturer_id=${widget.userId}'
-    //    ถ้า API ไม่รองรับ ก็ใช้ URL เดิมได้ครับ
-    final url = Uri.parse(
-      'http://10.2.21.252:3000/bookings/pending',
-    ); // <--- ⚠️ ตรวจสอบ URL ของคุณ
+    // กำหนดให้แสดง Loading
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
+
+    final url = Uri.parse('http://10.2.21.252:3000/bookings/pending');
 
     try {
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        setState(() {
-          _requests = List<Map<String, dynamic>>.from(data);
-          _isLoading = false;
-        });
+        if (mounted) {
+          // เช็ค mounted ก่อน setState
+          setState(() {
+            _requests = List<Map<String, dynamic>>.from(data);
+            _isLoading = false;
+          });
+        }
       } else {
         print('Failed to load requests. Status code: ${response.statusCode}');
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      print('Error fetching requests: $e');
+      if (mounted) {
         setState(() {
           _isLoading = false;
         });
       }
-    } catch (e) {
-      print('Error fetching requests: $e');
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
   // --- 4. ส่วนแสดงผล (build) ---
   @override
   Widget build(BuildContext context) {
-    // ⭐️ 4. ลบ Scaffold, AppBar, และ BottomNavigationBar ออก
-    // เพราะหน้านี้จะถูกแสดงใน 'body' ของ Browse_Lecturer
-    // ซึ่งมี Scaffold ของตัวเองอยู่แล้ว
-
-    // return Scaffold( 👈 ลบ
-    //   appBar: AppBar( 👈 ลบ
-    //     ...
-    //   ), 👈 ลบ
-
     // ⭐️ 5. คืนค่า body (ListView) โดยตรง
     return _isLoading
         ? const Center(child: CircularProgressIndicator())
@@ -112,17 +100,23 @@ class _Lecturer_reqState extends State<Lecturer_req> {
                   : (request["date"] ?? 'No Date');
 
               return GestureDetector(
-                onTap: () {
-                  Navigator.push(
+                // ⭐️ แก้ไข: ใช้ async/await เพื่อรอผลลัพธ์จาก CheckPage
+                onTap: () async {
+                  final shouldRefresh = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      // ⭐️ (ยังคงเดิม) ส่งข้อมูลไปหน้า CheckPage
                       builder: (context) => CheckPage(
-                        userId: widget.userId, // 👈 เพิ่มบรรทัดนี้
-                        requestData: request,
+                        userId: widget.userId,
+                        requestData: request, // ส่งข้อมูลคำขอไป
                       ),
                     ),
                   );
+
+                  // ✅ ถ้า CheckPage สั่งให้ Refresh (ส่งค่า true กลับมา)
+                  if (shouldRefresh == true) {
+                    // ดึงข้อมูลใหม่เพื่ออัปเดตรายการ
+                    await _fetchRequests();
+                  }
                 },
                 child: Card(
                   elevation: 4,
@@ -264,11 +258,5 @@ class _Lecturer_reqState extends State<Lecturer_req> {
               );
             },
           );
-
-    // 🗑️ 6. ลบ BottomNavigationBar
-    //   bottomNavigationBar: BottomNavigationBar( 👈 ลบ
-    //     ...
-    //   ), 👈 ลบ
-    // ); 👈 ลบ
   }
 }

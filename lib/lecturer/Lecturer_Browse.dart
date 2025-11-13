@@ -202,6 +202,21 @@ class _Browse_LecturerState extends State<Browse_Lecturer> {
       backgroundColor: lightPageBg, // 👈 สีพื้นหลังจาก Browse
       appBar: AppBar(
         backgroundColor: Colors.blue.shade800,
+
+        leading: IconButton(
+          icon: const Icon(Icons.dashboard, color: Colors.white),
+          onPressed: () {
+            // 📍 ใช้ pushReplacementNamed เพื่อกลับไปหน้า Dashboard
+            // พร้อมล้างหน้าปัจจุบันออกจาก Stack
+            // และส่งข้อมูลผู้ใช้กลับไปด้วย
+            Navigator.pushReplacementNamed(
+              context,
+              '/Lecturer_Browse', // 👈 เปลี่ยนเป็นชื่อ Route ของหน้า Dashboard ของคุณ
+              arguments: {'userId': widget.userId, 'userRole': widget.userRole},
+            );
+          },
+          tooltip: 'Dashboard / Back',
+        ),
         // 📍 (แก้ไข) ทำให้ Title เปลี่ยนตาม Tab ที่เลือก
         title: Text(
           _pageTitles[_selectedIndex], // 👈 ใช้ Title จาก List

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart'; // สำหรับจัดรูปแบบวันที่
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -14,49 +14,8 @@ class CheckPage extends StatefulWidget {
 }
 
 class _CheckPageState extends State<CheckPage> {
-  bool _isLoading = false; // สำหรับปุ่ม Approve/Reject
-  bool _loadingData = true; // สำหรับตอนโหลดข้อมูล
-  Map<String, dynamic>? _bookingData;
+  bool _isLoading = false; // ตัวแปรสำหรับคุมปุ่ม
 
-  @override
-  void initState() {
-    super.initState();
-    _loadData(); // 🔹 เรียกโหลดข้อมูลตอนเปิดหน้า
-  }
-
-  // 🔹 ฟังก์ชันโหลดข้อมูลจาก backend
-  Future<void> _loadData() async {
-    final data = await _fetchBookingDetail();
-    setState(() {
-      _bookingData = data ?? widget.requestData;
-      _loadingData = false;
-    });
-  }
-
-  // 🔹 ฟังก์ชัน GET ดึงข้อมูลการจองจาก backend
-  Future<Map<String, dynamic>?> _fetchBookingDetail() async {
-    final bookingId = widget.requestData?['Booking_id'];
-    if (bookingId == null) return null;
-
-    try {
-      final url = Uri.parse('http://10.2.21.252:3000/bookings/$bookingId');
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        print("✅ Booking Detail: $data");
-        return data;
-      } else {
-        print("❌ Error fetching booking: ${response.body}");
-        return null;
-      }
-    } catch (e) {
-      print("❌ Exception: $e");
-      return null;
-    }
-  }
-
-  // 🔹 ฟังก์ชัน PATCH อัปเดตสถานะการจอง
   Future<void> _updateBookingStatus(String newStatus) async {
     if (_isLoading) return;
 
@@ -64,17 +23,19 @@ class _CheckPageState extends State<CheckPage> {
       _isLoading = true;
     });
 
-    final bookingId =
-        _bookingData?['Booking_id'] ?? widget.requestData?['Booking_id'];
+    final bookingId = widget.requestData?['Booking_id'];
 
     if (bookingId == null) {
+      print("Error: Booking ID is null!");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Error: Booking ID not found'),
+          content: Text('เกิดข้อผิดพลาด: ไม่พบ Booking ID'),
           backgroundColor: Colors.red,
         ),
       );
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+      });
       return;
     }
 
@@ -84,48 +45,54 @@ class _CheckPageState extends State<CheckPage> {
       final response = await http.patch(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'new_status': newStatus}),
+        body: json.encode({
+          'new_status': newStatus, // Backend ต้องการ 'new_status'
+        }),
       );
 
       if (response.statusCode == 200) {
+        // --- 🚀 สำเร็จ ---
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Updated status to "$newStatus" successfully'),
+            content: Text('อัปเดตสถานะเป็น "$newStatus" สำเร็จ'),
             backgroundColor: Colors.green,
           ),
         );
+        // กลับไปหน้า List พร้อมส่งสัญญาณให้ Refresh (true)
         Navigator.pop(context, true);
       } else {
+        // --- ❌ ล้มเหลว (Server มีปัญหา) ---
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Update failed: ${response.body}'),
+            content: Text('อัปเดตล้มเหลว: ${response.body}'),
             backgroundColor: Colors.red,
           ),
         );
+        setState(() {
+          _isLoading = false;
+        });
       }
     } catch (e) {
+      // --- ❌ ล้มเหลว (เช่น ไม่มีเน็ต) ---
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Connection error: $e'),
+          content: Text('เกิดข้อผิดพลาดในการเชื่อมต่อ: $e'),
           backgroundColor: Colors.red,
         ),
       );
-    } finally {
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // 🔸 ถ้ายังโหลดข้อมูลอยู่
-    if (_loadingData) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    final data = widget.requestData;
 
-    final data = _bookingData;
     if (data == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text("Check Booking")),
+        appBar: AppBar(),
         body: const Center(
           child: Text(
             'Room reservation request not found',
@@ -135,7 +102,7 @@ class _CheckPageState extends State<CheckPage> {
       );
     }
 
-    // 🔸 เตรียมข้อมูลแสดงผล
+    // ส่วนแปลงข้อมูล
     String finalImage = (data["image"] as String?) ?? 'assets/imgs/room1.jpg';
     String finalRoomName = data["roomName"] ?? 'No Name';
     String finalPrice = (data["price"] != null)
@@ -144,7 +111,6 @@ class _CheckPageState extends State<CheckPage> {
     String finalUsername = data["username"] ?? 'No User';
     String finalDate = 'No Date';
     String finalTime = data["time"] ?? 'No Time';
-
     try {
       if (data["date"] != null) {
         final dateTime = DateTime.parse(data["date"]);
@@ -170,13 +136,13 @@ class _CheckPageState extends State<CheckPage> {
             username: finalUsername,
             date: finalDate,
             time: finalTime,
+            // เชื่อมปุ่มเข้ากับฟังก์ชัน API (ส่ง null เมื่อกำลังโหลด)
             onApprove: _isLoading
                 ? null
                 : () => _updateBookingStatus('approved'),
             onReject: _isLoading
                 ? null
                 : () => _updateBookingStatus('rejected'),
-            isLoading: _isLoading,
           ),
         ),
       ),
@@ -184,11 +150,10 @@ class _CheckPageState extends State<CheckPage> {
   }
 }
 
-/// การ์ดแสดงข้อมูลการจอง + ปุ่ม Approve / Reject
+/// การ์ดคำขอแต่ละรายการ
 class _RequestCard extends StatelessWidget {
   final String image, roomName, price, username, date, time;
   final VoidCallback? onApprove, onReject;
-  final bool isLoading;
 
   const _RequestCard({
     required this.image,
@@ -199,7 +164,6 @@ class _RequestCard extends StatelessWidget {
     required this.time,
     required this.onApprove,
     required this.onReject,
-    required this.isLoading,
   });
 
   @override
@@ -292,6 +256,8 @@ class _RequestCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
+
+          // ⭐️ ปุ่ม Approve / Reject
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -306,8 +272,13 @@ class _RequestCard extends StatelessWidget {
                     vertical: 10,
                   ),
                   shape: const StadiumBorder(),
+                  textStyle: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
                 ),
-                child: isLoading
+                // ✅ แก้ไข: ต้องเช็ค onApprove == null
+                child: (onApprove == null)
                     ? const SizedBox(
                         width: 12,
                         height: 12,
@@ -330,8 +301,13 @@ class _RequestCard extends StatelessWidget {
                     vertical: 10,
                   ),
                   shape: const StadiumBorder(),
+                  textStyle: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
                 ),
-                child: isLoading
+                // ✅ โค้ดนี้ถูกต้องแล้ว: เช็ค onReject == null
+                child: (onReject == null)
                     ? const SizedBox(
                         width: 12,
                         height: 12,

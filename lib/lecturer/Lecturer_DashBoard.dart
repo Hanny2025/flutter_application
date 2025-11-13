@@ -118,28 +118,18 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         backgroundColor: const Color.fromARGB(255, 0, 62, 195),
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            // ใช้ Navigator.pop(context) เพื่อกลับไปยังหน้าก่อนหน้า
+            // หากไม่มีหน้าก่อนหน้า (หน้า Dashboard เป็นหน้าแรก) จะเป็นการออกจากแอป
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _fetchSummary,
         child: _buildBodyContent(), // (ส่วนนี้เหมือนเดิม)
-      ),
-
-      // ⭐️ 7. อัปเดต BottomNavigationBar
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.check_circle_outline),
-            label: 'Check',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
-        ],
-        currentIndex: _selectedIndex, // 👈 ใช้ตัวแปร _selectedIndex (เป็น 0)
-        selectedItemColor: primaryBlue,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        onTap: _onItemTapped, // 👈 เปลี่ยนมาเรียกฟังก์ชัน _onItemTapped
       ),
     );
   }
