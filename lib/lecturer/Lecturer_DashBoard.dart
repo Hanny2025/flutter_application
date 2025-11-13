@@ -1,55 +1,63 @@
 import 'package:flutter/material.dart';
-import 'BottomNav.dart'; // (ตรวจสอบว่าไฟล์นี้มีอยู่จริง)
-import 'package:http/http.dart' as http; // 1. 👈 Import HTTP
-import 'dart:convert'; // 2. 👈 Import 'dart:convert'
+// import '../Bottom_Nav.dart'; // (ลบออกได้ เพราะเราจะจัดการ Nav ในหน้านี้)
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 // ------------------------------------
-// 1. หน้า Dashboard (เปลี่ยนเป็น StatefulWidget)
+// 1. หน้า Dashboard (StatefulWidget)
 // ------------------------------------
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+  // ⭐️ 1. เพิ่มตัวแปรสำหรับรับค่า
+  final String userId;
+  final String userRole;
+
+  const DashboardPage({
+    super.key,
+    required this.userId, // ⭐️ 2. เพิ่ม required
+    required this.userRole, // ⭐️ 3. เพิ่ม required
+  });
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
+// ------------------------------------
+// 2. State ของ Dashboard
+// ------------------------------------
 class _DashboardPageState extends State<DashboardPage> {
-  // 3. 👈 เพิ่มตัวแปรสำหรับ "จดจำ" สถานะ
   Map<String, dynamic>? _summaryData;
   bool _isLoading = true;
   String? _errorMessage;
 
-  // 4. 👈 เรียกฟังก์ชันดึงข้อมูลตอนเปิดหน้า
+  // ⭐️ 4. กำหนดสี (ที่ BottomNav ต้องใช้)
+  static const Color primaryBlue = Color(0xFF0D47A1);
+
+  // ⭐️ 5. Index ของหน้านี้ (Home = 0)
+  final int _selectedIndex = 0; // หน้านี้คือ index 0
+
   @override
   void initState() {
     super.initState();
     _fetchSummary();
   }
 
-  // 5. 👈 ฟังก์ชันสำหรับดึง API (เหมือนใน Lecturer_req)
   Future<void> _fetchSummary() async {
-    // ⚠️ ถ้าทดสอบใน Android Emulator ให้ใช้ 10.0.2.2
-    // ⚠️ ถ้าทดสอบใน iOS Simulator หรือ Web ให้ใช้ localhost
+    // (ส่วนนี้เหมือนเดิม ... )
     const String apiUrl = 'http://10.2.21.252:3000/api/dashboard/summary';
-    // const String apiUrl = 'http://localhost:3000/api/dashboard/summary';
 
-    // (ตั้งค่า _isLoading = true เมื่อเริ่มดึง)
     setStateIfMounted(() {
       _isLoading = true;
-      _errorMessage = null; // ล้าง error เก่า
+      _errorMessage = null;
     });
 
     try {
       final response = await http.get(Uri.parse(apiUrl));
-
       if (response.statusCode == 200) {
-        // ถ้าสำเร็จ: บันทึกข้อมูล
         setStateIfMounted(() {
           _summaryData = json.decode(response.body);
           _isLoading = false;
         });
       } else {
-        // ถ้า Server มีปัญหา
         setStateIfMounted(() {
           _errorMessage =
               'Failed to load summary (Code: ${response.statusCode})';
@@ -57,7 +65,6 @@ class _DashboardPageState extends State<DashboardPage> {
         });
       }
     } catch (e) {
-      // ถ้าเชื่อมต่อไม่ได้ (เช่น ลืมเปิด Backend, ไม่มีเน็ต)
       setStateIfMounted(() {
         _errorMessage = 'Error connecting to server: ${e.toString()}';
         _isLoading = false;
@@ -65,10 +72,39 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  // (Helper function กัน error เวลาปิดหน้า)
   void setStateIfMounted(VoidCallback fn) {
     if (mounted) {
       setState(fn);
+    }
+  }
+
+  // ⭐️ 6. ฟังก์ชันสำหรับจัดการการกด BottomNav
+  void _onItemTapped(int index) {
+    // ถ้ากดแท็บเดิม (Home) ก็ไม่ต้องทำอะไร
+    if (index == _selectedIndex) return;
+
+    // เตรียมข้อมูลที่จะส่งไปหน้าใหม่
+    // (เราจะใช้ 'widget.userId' และ 'widget.userRole' ที่รับมาจาก constructor)
+    final arguments = {'userId': widget.userId, 'userRole': widget.userRole};
+
+    // เปลี่ยนหน้าตาม index ที่กด
+    switch (index) {
+      case 0:
+        // (นี่คือหน้า Home อยู่แล้ว)
+        break;
+      case 1:
+        Navigator.pushReplacementNamed(context, '/check', arguments: arguments);
+        break;
+      case 2:
+        Navigator.pushReplacementNamed(
+          context,
+          '/history',
+          arguments: arguments,
+        );
+        break;
+      case 3:
+        Navigator.pushReplacementNamed(context, '/user', arguments: arguments);
+        break;
     }
   }
 
@@ -83,26 +119,38 @@ class _DashboardPageState extends State<DashboardPage> {
         backgroundColor: const Color.fromARGB(255, 0, 62, 195),
         centerTitle: true,
       ),
-      // --- (6) 👈 body เปลี่ยนเป็น RefreshIndicator ---
-      // (เพื่อให้ผู้ใช้ "ดึงเพื่อโหลดใหม่" ได้)
       body: RefreshIndicator(
-        onRefresh: _fetchSummary, // 👈 สั่งให้ดึงข้อมูลใหม่
-        child: _buildBodyContent(), // 👈 เรียก Widget ที่แสดงผลจริง
+        onRefresh: _fetchSummary,
+        child: _buildBodyContent(), // (ส่วนนี้เหมือนเดิม)
       ),
-      bottomNavigationBar: const AppBottomNavigationBar(currentIndex: 0),
+
+      // ⭐️ 7. อัปเดต BottomNavigationBar
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.check_circle_outline),
+            label: 'Check',
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
+        ],
+        currentIndex: _selectedIndex, // 👈 ใช้ตัวแปร _selectedIndex (เป็น 0)
+        selectedItemColor: primaryBlue,
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
+        onTap: _onItemTapped, // 👈 เปลี่ยนมาเรียกฟังก์ชัน _onItemTapped
+      ),
     );
   }
 
-  // --- (7) 👈 สร้าง Widget ที่แสดงผลจริง ---
-  // (แยกออกมาเพื่อจัดการ Loading / Error)
+  // (ส่วน _buildBodyContent() เหมือนเดิมทุกประการ)
   Widget _buildBodyContent() {
     if (_isLoading) {
-      // 7.1 ถ้ากำลังโหลด
       return const Center(child: CircularProgressIndicator());
     }
 
     if (_errorMessage != null) {
-      // 7.2 ถ้ามี Error
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -116,41 +164,33 @@ class _DashboardPageState extends State<DashboardPage> {
     }
 
     if (_summaryData == null) {
-      // 7.3 ถ้าไม่มีข้อมูล (ไม่ควรเกิด แต่กันไว้)
       return const Center(child: Text('No data found.'));
     }
 
-    // 7.4 ถ้าสำเร็จ: แสดงผลการ์ด
     return ListView(
-      // (RefreshIndicator ต้องใช้กับ Scrollable)
       padding: const EdgeInsets.all(16.0),
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // --- (8) 👈 เชื่อมข้อมูลจริงเข้า SummaryCard ---
             SummaryCard(
-              // ใช้ .toString() เพื่อกัน Error (เหมือนที่เราแก้ใน Lecturer_req)
               number: _summaryData!['totalSlots'].toString(),
               title: 'Total Slots',
               color: const Color(0xFF2196F3),
             ),
             const SizedBox(height: 10),
-
             SummaryCard(
               number: _summaryData!['freeSlots'].toString(),
               title: 'Free Slots (Today)',
               color: const Color(0xFF4CAF50),
             ),
             const SizedBox(height: 10),
-
             SummaryCard(
               number: _summaryData!['pendingSlots'].toString(),
               title: 'Pending Slots',
               color: const Color(0xFFFFC107),
             ),
             const SizedBox(height: 10),
-
             SummaryCard(
               number: _summaryData!['disabledRooms'].toString(),
               title: 'Disable Rooms',
@@ -163,10 +203,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 }
 
-// ------------------------------------
-// 2. Class SummaryCard (แม่แบบการ์ด)
-// (ไม่ต้องแก้ไข - ใช้เหมือนเดิม)
-// ------------------------------------
+// (Class SummaryCard เหมือนเดิม)
 class SummaryCard extends StatelessWidget {
   final String number;
   final String title;

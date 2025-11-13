@@ -16,7 +16,7 @@ class History extends StatefulWidget {
 
 class _HistoryState extends State<History> {
   late Future<List<dynamic>> _historyFuture;
-  final String serverIp = '172.25.57.119';
+  final String serverIp = '10.2.21.252';
 
   String _selectedFilter = 'All';
   final List<String> filters = const ['All', 'Approved', 'Rejected'];

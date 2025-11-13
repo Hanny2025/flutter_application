@@ -16,7 +16,7 @@ class Check extends StatefulWidget {
 
 class _CheckState extends State<Check> {
   late Future<List<dynamic>> _bookingsFuture;
-  final String serverIp = '172.25.57.119';
+  final String serverIp = '10.2.21.252';
 
   @override
   void initState() {

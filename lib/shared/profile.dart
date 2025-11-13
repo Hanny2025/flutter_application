@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/login.dart';
+import 'package:flutter_application/shared/login.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -30,9 +30,7 @@ class _ProfileState extends State<Profile> {
   Future<void> fetchUserData() async {
     try {
       final response = await http.get(
-        Uri.parse(
-          "http://172.25.57.119:3000/get_user?user_id=${widget.userId}",
-        ),
+        Uri.parse("http://10.2.21.252:3000/get_user?user_id=${widget.userId}"),
       );
 
       print("Response status: ${response.statusCode}");

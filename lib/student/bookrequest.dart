@@ -25,7 +25,7 @@ class _BookrequestState extends State<Bookrequest> {
   DateTime? _selectedDate;
   int? _selectedSlotId;
   bool _isLoading = false;
-  final String serverIp = '172.25.57.119';
+  final String serverIp = '10.2.21.252';
 
   @override
   void initState() {
@@ -133,9 +133,15 @@ class _BookrequestState extends State<Bookrequest> {
         // Try to fetch latest room statuses so parent can refresh with up-to-date data
         try {
           final String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-          final roomsUrl = Uri.parse('http://$serverIp:3000/rooms-with-status?date=$today');
-          final roomsResp = await http.get(roomsUrl).timeout(const Duration(seconds: 10));
-          debugPrint('Post-success: fetched rooms -> status:${roomsResp.statusCode}');
+          final roomsUrl = Uri.parse(
+            'http://$serverIp:3000/rooms-with-status?date=$today',
+          );
+          final roomsResp = await http
+              .get(roomsUrl)
+              .timeout(const Duration(seconds: 10));
+          debugPrint(
+            'Post-success: fetched rooms -> status:${roomsResp.statusCode}',
+          );
         } catch (e) {
           debugPrint('Post-success: error fetching rooms after booking -> $e');
         }
@@ -157,7 +163,9 @@ class _BookrequestState extends State<Bookrequest> {
           message = response.body.toString();
         }
 
-        debugPrint('Booking failed -> status:${response.statusCode} body:${response.body}');
+        debugPrint(
+          'Booking failed -> status:${response.statusCode} body:${response.body}',
+        );
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

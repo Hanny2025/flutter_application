@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'BottomNav.dart'; // 👈 1. Import BottomNav
+import '../Bottom_Nav.dart'; // 👈 1. Import BottomNav
 import 'package:http/http.dart' as http; // 👈 2. Import HTTP
 import 'dart:convert'; // 👈 3. Import Convert
 import 'package:shared_preferences/shared_preferences.dart'; // 👈 4. Import SharedPreferences
@@ -21,6 +21,9 @@ class _UserPageState extends State<UserPage> {
   Map<String, dynamic>? _userData;
   bool _isLoading = true;
   String? _errorMessage;
+
+  // ⭐️⭐️ [เพิ่มตรงนี้] ⭐️⭐️
+  int _selectedIndex = 0;
 
   @override
   void initState() {
@@ -103,7 +106,23 @@ class _UserPageState extends State<UserPage> {
       // (6) 🌟 (แก้ไขจุดที่ 2) เพิ่ม BottomNav ใน Scaffold
       // (ตาม BottomNav.dart ของคุณ, 'User' คือ index 4)
       // ------------------------------------
-      bottomNavigationBar: const AppBottomNavigationBar(currentIndex: 4),
+      // กลับมาใช้ BottomNavigationBar เดิมของคุณ
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.check_circle_outline),
+            label: 'Check',
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: primaryBlue,
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
+        onTap: (index) => setState(() => _selectedIndex = index),
+      ),
     );
   }
 
