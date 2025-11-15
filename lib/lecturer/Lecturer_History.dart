@@ -5,8 +5,10 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
+// ----------------------------------------
+// ## 📅 HistoryPage (หน้าประวัติการจอง)
+// ----------------------------------------
 class HistoryPage extends StatefulWidget {
-  // รับค่า userId สำหรับส่งต่อใน BottomNav
   final String userId;
 
   const HistoryPage({super.key, required this.userId});
@@ -19,13 +21,12 @@ class _HistoryPageState extends State<HistoryPage> {
   // --- Constants & State Variables ---
   String selectedFilter = 'All';
   String currentUserName = 'Loading...';
-  int _selectedIndex = 2; // History tab index
-  static const Color primaryBlue = Color(0xFF0D47A1);
 
   // Base URL
-  final String _baseUrl = 'http://10.2.21.252:3000';
+  final String _baseUrl =
+      'http://172.27.9.232:3000'; // 📍 ตรวจสอบ IP ให้ถูกต้อง
 
-  // Future สำหรับโหลดข้อมูลประวัติการจอง (สามารถ Refresh ได้)
+  // Future สำหรับโหลดข้อมูลประวัติการจอง
   late Future<List<Map<String, dynamic>>> _historyFuture;
 
   @override
@@ -35,34 +36,60 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   // ------------------------------------
-  //            Data Fetching
+  // ### 💾 Data Fetching & Refresh Logic
   // ------------------------------------
 
-  // 1. โหลดข้อมูล Lecturer Name และเริ่มดึง History
+  // 1. โหลดข้อมูล Lecturer Name จาก SharedPreferences และเริ่มดึง History
   Future<List<Map<String, dynamic>>> _loadPageData() async {
-    final prefs = await SharedPreferences.getInstance();
+    // 🔍 ดึงชื่อผู้ใช้
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? userName = prefs.getString('user_name');
+      setState(() {
+        currentUserName = userName ?? 'Lecturer';
+      });
+    } catch (e) {
+      debugPrint('Error loading user name: $e');
+      setState(() {
+        currentUserName = 'Error Loading Name';
+      });
+    }
 
-    // ดึงชื่อ Lecturer มาแสดง
-    final String? userName = prefs.getString('user_name');
-
-    setState(() {
-      currentUserName = userName ?? 'Lecturer';
-    });
-
-    // ดึงข้อมูล History ทั้งหมดสำหรับ Admin/Lecturer
+    // 🚀 ดึงประวัติการจอง
     return _fetchBookings();
   }
 
-  // 2. ฟังก์ชันดึง History จาก API
+  // 2. ฟังก์ชันดึง History จาก API และทำการจัดเรียง 🔄
   Future<List<Map<String, dynamic>>> _fetchBookings() async {
     final url = Uri.parse('$_baseUrl/history/all');
-    print('Fetching ALL history from: $url');
+    debugPrint('Fetching ALL history from: $url');
 
     try {
-      final response = await http.get(url);
+      final response = await http.get(url).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
-        return data.map((item) => item as Map<String, dynamic>).toList();
+
+        List<Map<String, dynamic>> bookings = data
+            .map((item) => item as Map<String, dynamic>)
+            .toList();
+
+        // ✅ **แก้ไข: จัดเรียงตามเวลาที่รายการถูกสร้าง (created_at) หรือดำเนินการ (action_at) ล่าสุด**
+        // 💡 หากไม่มีฟิลด์ 'created_at' หรือ 'action_at' จะย้อนกลับไปใช้ 'booking_date' แทน
+        bookings.sort((a, b) {
+          // ดึงค่า timestamp ที่น่าจะถูกต้องที่สุด
+          final timestampA =
+              a['created_at'] ?? a['action_at'] ?? a['booking_date'] ?? '';
+          final timestampB =
+              b['created_at'] ?? b['action_at'] ?? b['booking_date'] ?? '';
+
+          final dateA = DateTime.tryParse(timestampA) ?? DateTime(1970);
+          final dateB = DateTime.tryParse(timestampB) ?? DateTime(1970);
+
+          // การเปรียบเทียบ: b.compareTo(a) สำหรับการเรียงจากมากไปน้อย (ล่าสุดไปเก่าสุด)
+          return dateB.compareTo(dateA);
+        });
+
+        return bookings;
       } else {
         throw Exception(
           'Failed to load history (Code: ${response.statusCode})',
@@ -74,62 +101,64 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   // 3. ฟังก์ชัน Refresh ข้อมูล
-  void _refreshHistory() {
+  Future<void> refreshHistory() async {
     setState(() {
-      // กำหนดค่า Future ใหม่เพื่อให้ FutureBuilder โหลดซ้ำ
       _historyFuture = _loadPageData();
-      selectedFilter = 'All'; // รีเซ็ต Filter
+      selectedFilter = 'All'; // รีเซ็ต Filter เมื่อ Refresh
     });
-    print('History list refreshed.');
+    debugPrint('History list refreshed.');
   }
 
   // ------------------------------------
-  //            Helper Functions
+  // ### 🛠️ Helper Functions
   // ------------------------------------
 
+  // 1. Format วันที่ (แก้ไขเวอร์ชัน)
   String _formatDate(String? dateString) {
     if (dateString == null) return 'N/A';
     try {
-      return DateFormat('d MMM yyyy').format(DateTime.parse(dateString));
+      // แยกส่วนวันที่และเวลาเพื่อป้องกัน timezone issues
+      DateTime dateTime = DateTime.parse(dateString);
+
+      // ใช้ local timezone ของ device
+      dateTime = dateTime.toLocal();
+
+      // หรือถ้าต้องการให้เป็นเวลาไทยโดยเฉพาะ
+      // dateTime = dateTime.add(const Duration(hours: 7));
+
+      return DateFormat('d MMM yyyy').format(dateTime);
     } catch (e) {
+      debugPrint('Date parsing error: $e for date: $dateString');
       return dateString;
     }
   }
 
+  // 2. กำหนดสีตามสถานะการดำเนินการ
   Color _getStatusColor(String? action) {
-    if (action == 'Approved') {
+    if (action == null) return Colors.orangeAccent.shade100;
+
+    final normalizedAction = action.toLowerCase();
+
+    if (normalizedAction == 'approved') {
       return Colors.greenAccent.shade100;
     }
-    if (action == 'Rejected' || action == 'Cancelled') {
+    if (normalizedAction == 'rejected' || normalizedAction == 'cancelled') {
       return Colors.redAccent.shade100;
     }
-    return Colors.orangeAccent.shade100; // Pending
+    // สำหรับ 'pending' หรือสถานะอื่น ๆ
+    return Colors.orangeAccent.shade100;
   }
 
   // ------------------------------------
-  //            UI Components
+  // ### 🎨 UI Components
   // ------------------------------------
-
-  // จัดการการแตะที่ BottomNavigationBar
-  void _onItemTapped(int index) {
-    // ถ้าแตะแท็บ History ซ้ำ ให้ Refresh ข้อมูลแทนการนำทาง
-    if (index == _selectedIndex) {
-      _refreshHistory();
-      return;
-    }
-
-    // นำทางไปยังหน้าอื่น
-    final routes = {0: '/home', 1: '/check', 2: '/history', 3: '/user'};
-    Navigator.pushReplacementNamed(
-      context,
-      routes[index]!,
-      arguments: widget.userId,
-    );
-  }
 
   // Widget สำหรับ Filter Button
   Widget _buildFilterButton(String label) {
     final bool isSelected = selectedFilter == label;
+    final String displayLabel = label
+        .toUpperCase(); // ทำให้ตัวใหญ่เพื่อความสวยงาม
+
     return Expanded(
       child: ElevatedButton.icon(
         onPressed: () {
@@ -137,25 +166,118 @@ class _HistoryPageState extends State<HistoryPage> {
             selectedFilter = label;
           });
         },
+        // Icon สำหรับสถานะที่ถูกเลือก
         icon: isSelected
             ? const Icon(Icons.check, color: Colors.black, size: 18)
             : const SizedBox.shrink(),
         label: Text(
-          label,
+          displayLabel,
           style: TextStyle(
             color: Colors.black,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 14,
           ),
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: isSelected
-              ? Colors.grey.shade400
+              ? Colors
+                    .lightBlue
+                    .shade200 // ใช้สีฟ้าอ่อนเมื่อถูกเลือก
               : Colors.grey.shade200,
+          foregroundColor: Colors.black,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          elevation: isSelected ? 2 : 0,
         ),
+      ),
+    );
+  }
+
+  // Widget สำหรับแสดงรายการประวัติการจอง
+  Widget _buildHistoryItem(Map<String, dynamic> item) {
+    final String roomName = item['Room_name'] ?? 'Unknown Room';
+    final String slotLabel = item['Slot_label'] ?? 'N/A';
+    final String bookingDate = _formatDate(item['booking_date']);
+    final String action = item['action'] ?? 'Pending';
+    final String username = item['username'] ?? 'N/A';
+    final Color statusColor = _getStatusColor(action);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                roomName,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF333333), // darkGrey
+                ),
+              ),
+              // Status Badge
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: statusColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  action.toUpperCase(), // แสดงสถานะเป็นตัวพิมพ์ใหญ่
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    color: Color(0xFF333333), // darkGrey
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Requested by: $username',
+            style: TextStyle(
+              color: Colors.blueGrey.shade700,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Divider(height: 1, color: Color(0xFFE0E0E0)),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+              const SizedBox(width: 8),
+              Text(bookingDate, style: const TextStyle(fontSize: 14)),
+              const SizedBox(width: 20),
+              const Icon(Icons.access_time, size: 16, color: Colors.grey),
+              const SizedBox(width: 8),
+              Text(slotLabel, style: const TextStyle(fontSize: 14)),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -163,36 +285,26 @@ class _HistoryPageState extends State<HistoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 1. AppBar พร้อมปุ่ม Refresh
-      appBar: AppBar(
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refreshHistory, // ฟังก์ชัน Refresh
-            tooltip: 'Refresh History',
-          ),
-        ],
-      ),
-
-      // 2. Body
+      // เพิ่ม Scaffold เพื่อให้มีโครงสร้างหน้าจอที่ถูกต้อง
+      backgroundColor: const Color(0xFFE7F7FF), // lightPageBg (สีพื้นหลัง)
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // แสดงชื่อผู้ใช้ปัจจุบัน
+            // User Header
             Row(
               children: [
                 const Icon(
                   Icons.person_outline,
-                  color: Color.fromARGB(255, 157, 184, 198),
+                  color: Color(0xFF9DB8C6), // สีฟ้าเทาอ่อน
                   size: 16,
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  currentUserName,
+                  'Current User: $currentUserName',
                   style: const TextStyle(
-                    color: Color.fromARGB(255, 157, 184, 198),
+                    color: Color(0xFF9DB8C6), // สีฟ้าเทาอ่อน
                     fontSize: 10,
                   ),
                 ),
@@ -200,7 +312,7 @@ class _HistoryPageState extends State<HistoryPage> {
             ),
             const SizedBox(height: 16),
 
-            // Filter buttons
+            // Filter Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -213,7 +325,7 @@ class _HistoryPageState extends State<HistoryPage> {
             ),
             const SizedBox(height: 20),
 
-            // FutureBuilder เพื่อแสดงรายการ History
+            // History List (FutureBuilder)
             Expanded(
               child: FutureBuilder<List<Map<String, dynamic>>>(
                 future: _historyFuture,
@@ -234,7 +346,9 @@ class _HistoryPageState extends State<HistoryPage> {
                   List<Map<String, dynamic>> filteredBookings = allBookings
                       .where((b) {
                         if (selectedFilter == 'All') return true;
-                        return b['action'] == selectedFilter;
+                        // 💡 เปลี่ยนเป็น .toLowerCase() เพื่อให้ Filter ตรงกัน
+                        return (b['action'] as String?)?.toLowerCase() ==
+                            selectedFilter.toLowerCase();
                       })
                       .toList();
 
@@ -244,7 +358,7 @@ class _HistoryPageState extends State<HistoryPage> {
                       child: Text(
                         allBookings.isEmpty
                             ? 'No booking history found.'
-                            : 'No bookings found for "$selectedFilter".',
+                            : 'No bookings found for "${selectedFilter.toUpperCase()}".',
                       ),
                     );
                   }
@@ -253,68 +367,7 @@ class _HistoryPageState extends State<HistoryPage> {
                   return ListView.builder(
                     itemCount: filteredBookings.length,
                     itemBuilder: (context, index) {
-                      final item = filteredBookings[index];
-                      final String roomName =
-                          item['Room_name'] ?? 'Unknown Room';
-                      final String slotLabel = item['Slot_label'] ?? 'N/A';
-                      final String bookingDate = _formatDate(
-                        item['booking_date'],
-                      );
-                      final String action = item['action'] ?? 'Pending';
-                      final String username = item['username'] ?? 'N/A';
-
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              roomName,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'User: $username',
-                              style: TextStyle(
-                                color: Colors.blueGrey.shade700,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text('$bookingDate   $slotLabel'),
-                            const SizedBox(height: 8),
-
-                            // Status Badge
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _getStatusColor(action),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  action,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
+                      return _buildHistoryItem(filteredBookings[index]);
                     },
                   );
                 },

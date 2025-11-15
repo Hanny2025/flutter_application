@@ -1,226 +1,65 @@
 import 'package:flutter/material.dart';
-import '../Bottom_Nav.dart'; // 👈 1. Import BottomNav
-import 'package:http/http.dart' as http; // 👈 2. Import HTTP
-import 'dart:convert'; // 👈 3. Import Convert
-import 'package:shared_preferences/shared_preferences.dart'; // 👈 4. Import SharedPreferences
+import 'package:flutter_application/shared/login.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-// ------------------------------------
-// (1) 🌟 เปลี่ยนเป็น StatefulWidget
-// ------------------------------------
-class UserPage extends StatefulWidget {
-  const UserPage({super.key});
+const Color primaryBlue = Color(0xFF1976D2);
+const Color lightBlueBackground = Color(0xFFE8F6FF);
+const Color darkGrey = Color(0xFF333333);
+
+class Profile extends StatefulWidget {
+  final String userId;
+
+  const Profile({super.key, required this.userId});
 
   @override
-  State<UserPage> createState() => _UserPageState();
+  State<Profile> createState() => _ProfileState();
 }
 
-class _UserPageState extends State<UserPage> {
-  // ------------------------------------
-  // (2) 🌟 เพิ่ม State สำหรับเก็บข้อมูล
-  // ------------------------------------
-  Map<String, dynamic>? _userData;
-  bool _isLoading = true;
-  String? _errorMessage;
-
-  // ⭐️⭐️ [เพิ่มตรงนี้] ⭐️⭐️
-  int _selectedIndex = 0;
+class _ProfileState extends State<Profile> {
+  Map<String, dynamic>? userData;
+  bool isLoading = true;
+  String errorMessage = '';
 
   @override
   void initState() {
     super.initState();
-    _fetchUserData(); // 👈 (3) สั่งดึงข้อมูลตอนเปิดหน้า
+    fetchUserData();
   }
 
-  // ------------------------------------
-  // (4) 🌟 ฟังก์ชันสำหรับดึงข้อมูลผู้ใช้
-  // ------------------------------------
-  Future<void> _fetchUserData() async {
-    setStateIfMounted(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
+  Future<void> fetchUserData() async {
     try {
-      // 4.1. 🔑 ค้นหา user_id ที่เราเก็บไว้ตอน Login
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getInt('user_id'); // (เราเก็บเป็น int ตอน Login)
+      final response = await http.get(
+        Uri.parse("http://172.27.9.232:3000/get_user?user_id=${widget.userId}"),
+      );
 
-      if (userId == null) {
-        setStateIfMounted(() {
-          _errorMessage = "User not logged in.";
-          _isLoading = false;
-        });
-        // (ถ้าไม่มี user_id ก็อาจจะเด้งไปหน้า Login เลย)
-        // Navigator.pushReplacementNamed(context, '/login');
-        return;
-      }
-
-      // 4.2. 📞 เรียก API /get_user
-      final url = Uri.parse('http://10.2.21.252:3000/get_user?user_id=$userId');
-      final response = await http.get(url);
+      print("Response status: ${response.statusCode}");
+      print("Response body: ${response.body}");
 
       if (response.statusCode == 200) {
-        setStateIfMounted(() {
-          _userData = json.decode(response.body);
-          _isLoading = false;
+        final data = json.decode(response.body);
+        setState(() {
+          userData = data;
+          isLoading = false;
+          errorMessage = '';
         });
       } else {
-        setStateIfMounted(() {
-          _errorMessage =
-              "Failed to load user data (Code: ${response.statusCode})";
-          _isLoading = false;
-        });
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? "Failed to load user data");
       }
     } catch (e) {
-      setStateIfMounted(() {
-        _errorMessage = "Error connecting: ${e.toString()}";
-        _isLoading = false;
+      print("Error fetching user: $e");
+      setState(() {
+        isLoading = false;
+        errorMessage = e.toString();
       });
     }
   }
 
-  // (Helper function)
-  void setStateIfMounted(VoidCallback fn) {
-    if (mounted) setState(fn);
+  void _handleLogout() {
+    _showLogoutDialog(context);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0D47A1),
-        title: const Text(
-          'User',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-      ),
-
-      // ------------------------------------
-      // (5) 🌟 แสดงผล Body ตามสถานะ
-      // ------------------------------------
-      body: _buildBodyContent(),
-
-      // ------------------------------------
-      // (6) 🌟 (แก้ไขจุดที่ 2) เพิ่ม BottomNav ใน Scaffold
-      // (ตาม BottomNav.dart ของคุณ, 'User' คือ index 4)
-      // ------------------------------------
-      // กลับมาใช้ BottomNavigationBar เดิมของคุณ
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.check_circle_outline),
-            label: 'Check',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: primaryBlue,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        onTap: (index) => setState(() => _selectedIndex = index),
-      ),
-    );
-  }
-
-  // ------------------------------------
-  // (7) 🌟 แยก Widget แสดงผล Body
-  // ------------------------------------
-  Widget _buildBodyContent() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_errorMessage != null) {
-      return Center(
-        child: Text(
-          'Error: $_errorMessage',
-          style: const TextStyle(color: Colors.red),
-        ),
-      );
-    }
-
-    // (ข้อมูลที่ได้จาก API)
-    final username = _userData?['username'] ?? '...';
-    final role = _userData?['role'] ?? '...';
-
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // 🧍‍♂️ กล่องข้อมูลผู้ใช้ (ที่ดึงข้อมูลจริง)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.lightBlue.shade100,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Icon(Icons.person, size: 50, color: Colors.black54),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 🌟 ใช้ข้อมูลจริง
-                    Text(
-                      'Username: $username', // 👈
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    // 🌟 ใช้ข้อมูลจริง
-                    Text(
-                      'Position: $role', // 👈
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 60),
-
-          // 🚪 ปุ่ม Log Out
-          InkWell(
-            onTap: () {
-              _showLogoutDialog(context);
-            },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.logout, color: Colors.red, size: 30),
-                SizedBox(width: 8),
-                Text(
-                  'Log Out',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(width: 8),
-                Icon(Icons.arrow_forward_ios, color: Colors.red, size: 20),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ------------------------------------
-  // (8) 🌟 (แก้ไขจุดที่ 1) ฟังก์ชัน Logout
-  // ------------------------------------
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -236,23 +75,17 @@ class _UserPageState extends State<UserPage> {
           content: const Text('Are you sure you want to log out?'),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
+              onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () async {
-                // 🌟 (เพิ่ม) เคลียร์ user_id ที่จำไว้
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.remove('user_id');
-
-                if (!mounted) return;
-                Navigator.pop(context); // ปิด Dialog
-                Navigator.pushReplacementNamed(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pushAndRemoveUntil(
                   context,
-                  '/login',
-                ); // ไปหน้า Login
+                  MaterialPageRoute(builder: (context) => const Login()),
+                  (route) => false,
+                );
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               child: const Text(
@@ -261,10 +94,165 @@ class _UserPageState extends State<UserPage> {
               ),
             ),
           ],
-
-          // ❌ (แก้ไขจุดที่ 1) ลบ BottomNav ที่ผิดออกจากตรงนี้
         );
       },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        toolbarHeight: 100,
+        backgroundColor: primaryBlue,
+        centerTitle: true,
+        title: const Text(
+          'User',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : errorMessage.isNotEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Error: $errorMessage",
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: fetchUserData,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            )
+          : userData == null
+          ? const Center(child: Text("No user data found"))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  UserProfileCard(
+                    userId: userData!['User_id'].toString(),
+                    username: userData!['username'],
+                    position: userData!['role'],
+                  ),
+                  const SizedBox(height: 30),
+                  LogoutTile(onTap: _handleLogout),
+                ],
+              ),
+            ),
+    );
+  }
+}
+
+class UserProfileCard extends StatelessWidget {
+  final String userId;
+  final String username;
+  final String position;
+
+  const UserProfileCard({
+    super.key,
+    required this.userId,
+    required this.username,
+    required this.position,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24.0),
+      decoration: BoxDecoration(
+        color: lightBlueBackground,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.person_pin, size: 60, color: primaryBlue),
+          const SizedBox(width: 20),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'ID: $userId',
+                style: const TextStyle(fontSize: 16, color: darkGrey),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Username: $username',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: darkGrey,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Position: $position',
+                style: const TextStyle(fontSize: 16, color: darkGrey),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class LogoutTile extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const LogoutTile({super.key, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 15.0),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: Colors.grey, width: 0.5)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: const [
+                Icon(Icons.logout, color: Colors.red, size: 28),
+                SizedBox(width: 15),
+                Text(
+                  'Log Out',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.red,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            const Icon(Icons.arrow_forward_ios, color: Colors.red, size: 20),
+          ],
+        ),
+      ),
     );
   }
 }

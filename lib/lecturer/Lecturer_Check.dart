@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // สำหรับจัดรูปแบบวันที่
+import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -14,7 +14,7 @@ class CheckPage extends StatefulWidget {
 }
 
 class _CheckPageState extends State<CheckPage> {
-  bool _isLoading = false; // ตัวแปรสำหรับคุมปุ่ม
+  bool _isLoading = false;
 
   Future<void> _updateBookingStatus(String newStatus) async {
     if (_isLoading) return;
@@ -39,22 +39,22 @@ class _CheckPageState extends State<CheckPage> {
       return;
     }
 
-    final url = Uri.parse('http://10.2.21.252:3000/bookings/$bookingId/status');
+    final url = Uri.parse(
+      'http://172.27.9.232:3000/bookings/$bookingId/status',
+    );
 
     try {
       final response = await http.patch(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'new_status': newStatus, // Backend ต้องการ 'new_status'
-        }),
+        body: json.encode({'new_status': newStatus}),
       );
 
       if (response.statusCode == 200) {
-        // --- 🚀 สำเร็จ ---
+        // ---  สำเร็จ ---
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('อัปเดตสถานะเป็น "$newStatus" สำเร็จ'),
+            content: Text('updated status to"$newStatus"Successfully'),
             backgroundColor: Colors.green,
           ),
         );
@@ -64,7 +64,7 @@ class _CheckPageState extends State<CheckPage> {
         // --- ❌ ล้มเหลว (Server มีปัญหา) ---
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('อัปเดตล้มเหลว: ${response.body}'),
+            content: Text('updated faild: ${response.body}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -76,7 +76,7 @@ class _CheckPageState extends State<CheckPage> {
       // --- ❌ ล้มเหลว (เช่น ไม่มีเน็ต) ---
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('เกิดข้อผิดพลาดในการเชื่อมต่อ: $e'),
+          content: Text('server error: $e'),
           backgroundColor: Colors.red,
         ),
       );

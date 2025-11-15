@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-// import '../Bottom_Nav.dart'; // (ลบออกได้ เพราะเราจะจัดการ Nav ในหน้านี้)
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -7,14 +6,13 @@ import 'dart:convert';
 // 1. หน้า Dashboard (StatefulWidget)
 // ------------------------------------
 class DashboardPage extends StatefulWidget {
-  // ⭐️ 1. เพิ่มตัวแปรสำหรับรับค่า
   final String userId;
   final String userRole;
 
   const DashboardPage({
     super.key,
-    required this.userId, // ⭐️ 2. เพิ่ม required
-    required this.userRole, // ⭐️ 3. เพิ่ม required
+    required this.userId,
+    required this.userRole,
   });
 
   @override
@@ -29,11 +27,9 @@ class _DashboardPageState extends State<DashboardPage> {
   bool _isLoading = true;
   String? _errorMessage;
 
-  // ⭐️ 4. กำหนดสี (ที่ BottomNav ต้องใช้)
   static const Color primaryBlue = Color(0xFF0D47A1);
 
-  // ⭐️ 5. Index ของหน้านี้ (Home = 0)
-  final int _selectedIndex = 0; // หน้านี้คือ index 0
+  final int _selectedIndex = 0;
 
   @override
   void initState() {
@@ -42,8 +38,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _fetchSummary() async {
-    // (ส่วนนี้เหมือนเดิม ... )
-    const String apiUrl = 'http://10.2.21.252:3000/api/dashboard/summary';
+    const String apiUrl = 'http://172.27.9.232:3000/api/dashboard/summary';
 
     setStateIfMounted(() {
       _isLoading = true;
@@ -78,19 +73,13 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  // ⭐️ 6. ฟังก์ชันสำหรับจัดการการกด BottomNav
   void _onItemTapped(int index) {
-    // ถ้ากดแท็บเดิม (Home) ก็ไม่ต้องทำอะไร
     if (index == _selectedIndex) return;
 
-    // เตรียมข้อมูลที่จะส่งไปหน้าใหม่
-    // (เราจะใช้ 'widget.userId' และ 'widget.userRole' ที่รับมาจาก constructor)
     final arguments = {'userId': widget.userId, 'userRole': widget.userRole};
 
-    // เปลี่ยนหน้าตาม index ที่กด
     switch (index) {
       case 0:
-        // (นี่คือหน้า Home อยู่แล้ว)
         break;
       case 1:
         Navigator.pushReplacementNamed(context, '/check', arguments: arguments);
@@ -121,20 +110,22 @@ class _DashboardPageState extends State<DashboardPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            // ใช้ Navigator.pop(context) เพื่อกลับไปยังหน้าก่อนหน้า
-            // หากไม่มีหน้าก่อนหน้า (หน้า Dashboard เป็นหน้าแรก) จะเป็นการออกจากแอป
-            Navigator.pop(context);
+            final args = {'userId': widget.userId, 'userRole': widget.userRole};
+            Navigator.pushReplacementNamed(
+              context,
+              '/Browse_Lecturer',
+              arguments: args,
+            );
           },
         ),
       ),
       body: RefreshIndicator(
         onRefresh: _fetchSummary,
-        child: _buildBodyContent(), // (ส่วนนี้เหมือนเดิม)
+        child: _buildBodyContent(),
       ),
     );
   }
 
-  // (ส่วน _buildBodyContent() เหมือนเดิมทุกประการ)
   Widget _buildBodyContent() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -193,7 +184,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 }
 
-// (Class SummaryCard เหมือนเดิม)
+// (Class SummaryCard)
 class SummaryCard extends StatelessWidget {
   final String number;
   final String title;

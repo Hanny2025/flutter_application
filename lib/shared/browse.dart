@@ -209,7 +209,7 @@ class HomeScreenContent extends StatefulWidget {
 
 class _HomeScreenContentState extends State<HomeScreenContent> {
   late Future<List<dynamic>> _roomsFuture;
-  final String serverIp = '10.2.21.252';
+  final String serverIp = '172.27.9.232';
 
   @override
   void initState() {

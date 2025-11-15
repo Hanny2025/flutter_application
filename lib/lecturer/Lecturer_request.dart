@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'Lecturer_Check.dart'; // 👈 (จำเป็น) สำหรับการ Navigate ไป CheckPage
+import 'Lecturer_Check.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
@@ -8,13 +8,9 @@ import 'package:intl/intl.dart';
 // คลาส Widget (กรอบรูป)
 // ------------------------------------
 class Lecturer_req extends StatefulWidget {
-  // ⭐️ 1. เพิ่มตัวรับ userId
   final String userId;
 
-  const Lecturer_req({
-    super.key,
-    required this.userId, // 👈 required this.userId
-  });
+  const Lecturer_req({super.key, required this.userId});
 
   @override
   State<Lecturer_req> createState() => _Lecturer_reqState();
@@ -37,22 +33,19 @@ class _Lecturer_reqState extends State<Lecturer_req> {
 
   // --- 3. ฟังก์ชันสำหรับดึงข้อมูลจาก API ---
   Future<void> _fetchRequests() async {
-    // กำหนดให้แสดง Loading
     if (mounted) {
       setState(() {
         _isLoading = true;
       });
     }
 
-    final url = Uri.parse('http://10.2.21.252:3000/bookings/pending');
-
+    final url = Uri.parse('http://172.27.9.232:3000/bookings/pending');
     try {
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         if (mounted) {
-          // เช็ค mounted ก่อน setState
           setState(() {
             _requests = List<Map<String, dynamic>>.from(data);
             _isLoading = false;
@@ -79,7 +72,7 @@ class _Lecturer_reqState extends State<Lecturer_req> {
   // --- 4. ส่วนแสดงผล (build) ---
   @override
   Widget build(BuildContext context) {
-    // ⭐️ 5. คืนค่า body (ListView) โดยตรง
+    // คืนค่า body (ListView) โดยตรง
     return _isLoading
         ? const Center(child: CircularProgressIndicator())
         : ListView.builder(
@@ -107,14 +100,12 @@ class _Lecturer_reqState extends State<Lecturer_req> {
                     MaterialPageRoute(
                       builder: (context) => CheckPage(
                         userId: widget.userId,
-                        requestData: request, // ส่งข้อมูลคำขอไป
+                        requestData: request,
                       ),
                     ),
                   );
 
-                  // ✅ ถ้า CheckPage สั่งให้ Refresh (ส่งค่า true กลับมา)
                   if (shouldRefresh == true) {
-                    // ดึงข้อมูลใหม่เพื่ออัปเดตรายการ
                     await _fetchRequests();
                   }
                 },
@@ -136,32 +127,29 @@ class _Lecturer_reqState extends State<Lecturer_req> {
                         // ... (โค้ดแสดงรูปภาพ) ...
                         ClipRRect(
                           borderRadius: BorderRadius.circular(10),
-                          child: (request["image"] != null)
+                          child:
+                              (request["image"] != null &&
+                                  request["image"].toString().isNotEmpty)
                               ? Image.network(
                                   request["image"]!,
                                   width: 85,
                                   height: 85,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) {
-                                    return Container(
+                                    // ถ้ารูปโหลดไม่ได้ → ใช้รูปใน assets แทน
+                                    return Image.asset(
+                                      'assets/imgs/room.jpg',
                                       width: 85,
                                       height: 85,
-                                      color: Colors.grey[200],
-                                      child: Icon(
-                                        Icons.broken_image,
-                                        color: Colors.grey[400],
-                                      ),
+                                      fit: BoxFit.cover,
                                     );
                                   },
                                 )
-                              : Container(
+                              : Image.asset(
+                                  'assets/imgs/room.jpg', // 👈 แสดงรูปจาก assets ถ้าไม่มี URL
                                   width: 85,
                                   height: 85,
-                                  color: Colors.grey[200],
-                                  child: Icon(
-                                    Icons.image_not_supported,
-                                    color: Colors.grey[400],
-                                  ),
+                                  fit: BoxFit.cover,
                                 ),
                         ),
                         const SizedBox(width: 14),

@@ -25,16 +25,16 @@ class _BookrequestState extends State<Bookrequest> {
   DateTime? _selectedDate;
   int? _selectedSlotId;
   bool _isLoading = false;
-  final String serverIp = '10.2.21.252';
+  final String serverIp = '172.27.9.232';
 
   @override
   void initState() {
     super.initState();
-    // ✅ สำหรับ Student ตั้งค่าวันที่เป็นวันนี้โดยอัตโนมัติ
+
     if (widget.userRole == 'Users') {
       _selectedDate = DateTime.now();
     } else {
-      _selectedDate = DateTime.now(); // Staff/Lecturer ยังใช้วันนี้เป็น default
+      _selectedDate = DateTime.now();
     }
   }
 

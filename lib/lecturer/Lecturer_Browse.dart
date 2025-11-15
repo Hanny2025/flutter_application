@@ -1,29 +1,28 @@
 import 'package:flutter/material.dart';
-import '../Bottom_Nav.dart'; // 📍 (ใช้ import เดิมของคุณ)
-import 'package:flutter_application/shared/login.dart'; // 📍 (เพิ่ม) Import สำหรับหน้า Login
+import '../Bottom_Nav.dart';
+import 'package:flutter_application/shared/login.dart';
 
 import 'Lecturer_Check.dart';
 import 'Lecturer_History.dart';
 import 'Lecturer_request.dart';
 
-// 📍 (เพิ่ม) Imports สำหรับ API (จากทั้ง 2 ไฟล์)
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
 
 // ----------------------------------------
-// Constants (รวมจากทั้ง 2 ไฟล์)
+// ## 🎨 Theme Constants
 // ----------------------------------------
 const Color primaryBlue = Color(0xFF1976D2);
-const Color lightPageBg = Color(0xFFE7F7FF); // 👈 สีพื้นหลังหลัก (จาก Browse)
-const Color lightCardBg = Color(0xFFE0F7FF); // 👈 สีการ์ดห้อง (จาก Browse)
+const Color lightPageBg = Color(0xFFE7F7FF);
+const Color lightCardBg = Color(0xFFE0F7FF);
 
-// 📍 (เพิ่ม) สีจากหน้า Profile
 const Color lightBlueBackground = Color(0xFFE8F6FF);
 const Color darkGrey = Color(0xFF333333);
 
 // ----------------------------------------
-// Model (จาก Browse_Lecturer)
+// ## 📊 Model
+// (สำหรับแสดงข้อมูลห้องในหน้า Browse)
 // ----------------------------------------
 class Room {
   final String imagePath;
@@ -44,7 +43,8 @@ class Room {
 }
 
 // ----------------------------------------
-// หน้าจอหลัก (Browse_Lecturer)
+// ## 🏠 Browse_Lecturer (Main Screen)
+// (หน้าจอหลักที่มี Bottom Navigation Bar)
 // ----------------------------------------
 class Browse_Lecturer extends StatefulWidget {
   final String userId;
@@ -63,13 +63,17 @@ class _Browse_LecturerState extends State<Browse_Lecturer> {
   // --- State Variables ---
   int _selectedIndex = 0;
   late Future<List<Room>> _roomsFuture;
-  final String serverIp = '10.2.21.252'; // 👈 ใส่ IP ของคุณ
+  final String serverIp = '172.27.9.232'; // 📍 **ใส่ IP ของคุณ**
 
-  // 📍 (เพิ่ม) List ของ Title สำหรับ AppBar
+  // 📍 **GlobalKey สำหรับ Profile** เพื่อเรียกฟังก์ชัน `fetchUserData()`
+
+  final GlobalKey<_ProfileState> _profileKey = GlobalKey<_ProfileState>();
+
+  // List ของ Title สำหรับ AppBar
   final List<String> _pageTitles = [
     'Rooms', // Index 0
-    'Request', // Index 1 <-- ✅
-    'Check', // Index 2 <-- ✅
+    'Request', // Index 1
+    'Check', // Index 2
     'History', // Index 3
     'User', // Index 4
   ];
@@ -86,6 +90,35 @@ class _Browse_LecturerState extends State<Browse_Lecturer> {
     });
   }
 
+  // 📍 **ฟังก์ชันรวมสำหรับปุ่ม Refresh** ในทุกหน้า
+  void _handleRefresh() {
+    setState(() {
+      switch (_selectedIndex) {
+        case 0: // Rooms
+          _refreshRooms();
+          break;
+        case 1: // Request
+          // TODO: Refresh Logic
+          debugPrint('Refreshing Request page (Index 1)...');
+          break;
+        case 2: // Check
+          // TODO: Refresh Logic
+          debugPrint('Refreshing Check page (Index 2)...');
+          break;
+        case 3: // History
+          // TODO: Refresh Logic
+          debugPrint('Refreshing History page (Index 3)...');
+          break;
+        case 4: // User (Profile)
+          // 🚀 เรียกใช้ฟังก์ชัน fetchUserData ผ่าน GlobalKey
+          _profileKey.currentState?.fetchUserData();
+          debugPrint('Refreshing Profile page (Index 4)...');
+          break;
+      }
+    });
+  }
+
+  // --- Utility Methods ---
   Color _mapStatusToColor(String? status) {
     switch (status?.toLowerCase()) {
       case 'free':
@@ -103,6 +136,7 @@ class _Browse_LecturerState extends State<Browse_Lecturer> {
     }
   }
 
+  // --- API Call ---
   Future<List<Room>> fetchRooms() async {
     final String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
     final url = Uri.parse(
@@ -180,46 +214,36 @@ class _Browse_LecturerState extends State<Browse_Lecturer> {
       },
     );
 
-    // 2. 📍 (แก้ไข) สร้าง List ของหน้าจอทั้งหมด
+    // 2. List ของหน้าจอทั้งหมด
     final List<Widget> pages = [
-      // Index 0: Home (หน้า List ห้อง)
-      roomListPage,
-
-      // Index 1: Request (หน้าใหม่)  <-- ⭐️ เพิ่ม
-      Lecturer_req(userId: widget.userId),
-
-      // Index 2: Check (เปลี่ยนเป็นหน้าจริง)
-      CheckPage(userId: widget.userId),
-
-      // Index 3: History (เปลี่ยนเป็นหน้าจริง)
-      HistoryPage(userId: widget.userId),
-
-      // Index 4: User
-      Profile(userId: widget.userId),
+      roomListPage, // Index 0 (Rooms)
+      Lecturer_req(userId: widget.userId), // Index 1 (Request)
+      CheckPage(userId: widget.userId), // Index 2 (Check)
+      HistoryPage(userId: widget.userId), // Index 3 (History)
+      // 🔑 ส่ง key ไปยัง Profile เพื่อให้ GlobalKey ใช้งานได้
+      Profile(userId: widget.userId, key: _profileKey), // Index 4 (User)
     ];
 
     return Scaffold(
-      backgroundColor: lightPageBg, // 👈 สีพื้นหลังจาก Browse
+      backgroundColor: lightPageBg,
       appBar: AppBar(
         backgroundColor: Colors.blue.shade800,
 
         leading: IconButton(
           icon: const Icon(Icons.dashboard, color: Colors.white),
           onPressed: () {
-            // 📍 ใช้ pushReplacementNamed เพื่อกลับไปหน้า Dashboard
-            // พร้อมล้างหน้าปัจจุบันออกจาก Stack
-            // และส่งข้อมูลผู้ใช้กลับไปด้วย
+            // 🔄 Navigates back or to the main dashboard
             Navigator.pushReplacementNamed(
               context,
-              '/Lecturer_Browse', // 👈 เปลี่ยนเป็นชื่อ Route ของหน้า Dashboard ของคุณ
+              '/Lecturer_Browse',
               arguments: {'userId': widget.userId, 'userRole': widget.userRole},
             );
           },
           tooltip: 'Dashboard / Back',
         ),
-        // 📍 (แก้ไข) ทำให้ Title เปลี่ยนตาม Tab ที่เลือก
+        // 💬 Title จะเปลี่ยนตาม Tab ที่เลือก
         title: Text(
-          _pageTitles[_selectedIndex], // 👈 ใช้ Title จาก List
+          _pageTitles[_selectedIndex],
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -228,25 +252,24 @@ class _Browse_LecturerState extends State<Browse_Lecturer> {
         centerTitle: true,
         automaticallyImplyLeading: false,
         actions: [
-          // 📍 (แก้ไข) แสดงปุ่ม Refresh เมื่ออยู่ที่หน้า Rooms (Index 0) เท่านั้น
-          if (_selectedIndex == 0)
-            IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.white),
-              onPressed: _refreshRooms,
-              tooltip: 'Refresh',
-            ),
+          // 🔄 ปุ่ม Refresh สำหรับทุกหน้า
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _handleRefresh,
+            tooltip: 'Refresh',
+          ),
         ],
       ),
 
-      // 📍 (แก้ไข) body จะสลับหน้าไปตาม List 'pages'
+      // 💻 body จะแสดงหน้าจอที่เลือกจาก Bottom Nav Bar
       body: pages[_selectedIndex],
 
-      // BottomNavigationBar เดิม
+      // 🧭 BottomNavigationBar
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.description), // 👈 (เลือกไอคอนตามชอบ)
+            icon: Icon(Icons.description),
             label: 'Request',
           ),
           BottomNavigationBarItem(
@@ -266,7 +289,7 @@ class _Browse_LecturerState extends State<Browse_Lecturer> {
     );
   }
 
-  // --- Widgets ย่อยของ Browse ---
+  // --- 🖼️ Widgets ย่อยของ Browse (Room Card) ---
   Widget _roomCard(Room r, Color lightCardBg) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -275,7 +298,7 @@ class _Browse_LecturerState extends State<Browse_Lecturer> {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          // TODO: ไปหน้า Room Detail (ถ้าต้องการ)
+          // TODO: Add navigation to Room Details page
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -346,6 +369,7 @@ class _Browse_LecturerState extends State<Browse_Lecturer> {
                     ],
                   ),
                   const SizedBox(height: 12),
+                  // แสดง Time Slots
                   for (final s in r.slots)
                     _buildTimeSlot(s.time, s.status, s.color),
                 ],
@@ -382,7 +406,7 @@ class _Browse_LecturerState extends State<Browse_Lecturer> {
 }
 
 // ===================================================================
-// 📍 (เพิ่ม) โค้ดทั้งหมดจากหน้า Profile.dart ย้ายมาไว้ที่นี่
+// ## 👤 Profile Screen (มาจาก Profile.dart)
 // ===================================================================
 
 class Profile extends StatefulWidget {
@@ -391,6 +415,7 @@ class Profile extends StatefulWidget {
   const Profile({super.key, required this.userId});
 
   @override
+  // 🔑 Key Point: ต้องเป็น `_ProfileState` เพื่อให้ GlobalKey เข้าถึงได้
   State<Profile> createState() => _ProfileState();
 }
 
@@ -398,7 +423,7 @@ class _ProfileState extends State<Profile> {
   Map<String, dynamic>? userData;
   bool isLoading = true;
   String errorMessage = '';
-  final String serverIp = '10.2.21.252'; // 👈 (ใช้ IP เดียวกัน)
+  final String serverIp = '172.27.9.232';
 
   @override
   void initState() {
@@ -406,8 +431,9 @@ class _ProfileState extends State<Profile> {
     fetchUserData();
   }
 
+  // 🔑 **Method สำคัญ**: ต้องเป็น public (`Future<void>`) เพื่อให้ GlobalKey เรียกใช้ได้
   Future<void> fetchUserData() async {
-    // 📍 (แก้ไข) ทำให้ isLoading = true ตอนเริ่ม fetch
+    // 🔄 ตั้งค่า isLoading ตอนเริ่ม fetch
     setState(() {
       isLoading = true;
       errorMessage = '';
@@ -440,6 +466,7 @@ class _ProfileState extends State<Profile> {
     }
   }
 
+  // --- Logout Logic ---
   void _handleLogout() {
     _showLogoutDialog(context);
   }
@@ -465,10 +492,11 @@ class _ProfileState extends State<Profile> {
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context); // ปิด Dialog
+                // 🚪 ไปหน้า Login และลบทุกหน้าจอใน Stack
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const Login()),
-                  (route) => false, // ลบทุกหน้าจอใน Stack
+                  (route) => false,
                 );
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -485,9 +513,6 @@ class _ProfileState extends State<Profile> {
 
   @override
   Widget build(BuildContext context) {
-    // 📍 (แก้ไข) ลบ Scaffold และ AppBar ออก
-    // และคืนค่าเป็น Widget ที่แสดงผลตามสถานะ (isLoading, errorMessage, userData)
-
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -503,7 +528,7 @@ class _ProfileState extends State<Profile> {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: fetchUserData, // 👈 เรียก Retry
+              onPressed: fetchUserData, // 👈 Retry
               child: const Text('Retry'),
             ),
           ],
@@ -515,20 +540,19 @@ class _ProfileState extends State<Profile> {
       return const Center(child: Text("No user data found"));
     }
 
-    // 📍 (แก้ไข) ถ้าโหลดสำเร็จ ให้คืนค่า SingleChildScrollView
-    // (ซึ่งเดิมเคยอยู่ใน body: ... ของ Scaffold)
-    // 📍 (เพิ่ม) Padding ที่นี่ เพราะไม่มี Scaffold แล้ว
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // 💳 แสดงข้อมูลโปรไฟล์
           UserProfileCard(
             userId: userData!['User_id'].toString(),
             username: userData!['username'],
             position: userData!['role'],
           ),
           const SizedBox(height: 30),
+          // 🚪 ปุ่ม Log Out
           LogoutTile(onTap: _handleLogout),
         ],
       ),
@@ -536,8 +560,9 @@ class _ProfileState extends State<Profile> {
   }
 }
 
-// --- Widgets ย่อยของ Profile ---
-
+// ----------------------------------------
+// ## 💳 UserProfileCard Widget
+// ----------------------------------------
 class UserProfileCard extends StatelessWidget {
   final String userId;
   final String username;
@@ -555,7 +580,7 @@ class UserProfileCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24.0),
       decoration: BoxDecoration(
-        color: lightBlueBackground, // 👈 ใช้สีจาก Constants
+        color: lightBlueBackground,
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
@@ -571,7 +596,7 @@ class UserProfileCard extends StatelessWidget {
         children: [
           const Icon(Icons.person_pin, size: 60, color: primaryBlue),
           const SizedBox(width: 20),
-          // 📍 (แก้ไข) ใช้ Expanded เพื่อกันข้อความล้น
+          // 📝 ใช้ Expanded เพื่อกันข้อความล้น
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -606,6 +631,9 @@ class UserProfileCard extends StatelessWidget {
   }
 }
 
+// ----------------------------------------
+// ## 🚪 LogoutTile Widget
+// ----------------------------------------
 class LogoutTile extends StatelessWidget {
   final VoidCallback onTap;
 
@@ -615,15 +643,13 @@ class LogoutTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8), // 📍 (เพิ่ม) ให้ขอบมนตอนกด
+      borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 10.0),
         decoration: BoxDecoration(
-          color: Colors.white, // 📍 (เพิ่ม) สีพื้นหลัง
+          color: Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.red.shade100, width: 1),
-          // 📍 (เปลี่ยน) ใช้ Border รอบๆ แทนเส้นล่าง
-          // border: Border(bottom: BorderSide(color: Colors.grey, width: 0.5)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

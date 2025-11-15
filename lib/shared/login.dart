@@ -42,7 +42,7 @@ class _LoginState extends State<Login> {
       final username = _usernameController.text;
       final password = _passwordController.text;
 
-      final fullUrl = 'http://10.2.21.252:3000/login';
+      final fullUrl = 'http://172.27.9.232:3000/login';
       final body = jsonEncode({'username': username, 'password': password});
 
       final response = await http
@@ -80,21 +80,14 @@ class _LoginState extends State<Login> {
 
           // 2. ตรวจสอบค่า userRole
           if (userRole.toLowerCase() == 'lecturer') {
-            // ⚠️ ถ้า role คือ 'lecturer' (แก้ 'lecturer' ให้ตรงกับค่าที่ server ส่งมา)
-            // ให้ไปหน้า LecturerPage
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => Browse_Lecturer(
-                  // ⚠️ แก้เป็นชื่อคลาสหน้า Lecturer ของคุณ
-                  userId: userId,
-                  userRole: userRole,
-                ),
+                builder: (context) =>
+                    Browse_Lecturer(userId: userId, userRole: userRole),
               ),
             );
           } else {
-            // ถ้าเป็น role อื่นๆ (เช่น 'Users' หรือ 'student')
-            // ให้ไปหน้า Browse (หน้า User ปกติ)
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
