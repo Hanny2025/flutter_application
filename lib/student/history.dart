@@ -16,7 +16,7 @@ class History extends StatefulWidget {
 
 class _HistoryState extends State<History> {
   late Future<List<dynamic>> _historyFuture;
-  final String serverIp = '172.25.57.119';
+  final String serverIp = '172.27.9.232';
 
   String _selectedFilter = 'All';
   final List<String> filters = const ['All', 'Approved', 'Rejected'];
@@ -369,6 +369,7 @@ class HistoryCard extends StatelessWidget {
   final String status;
   final Color statusColor;
   final Color backgroundColor;
+  final String? approverName;
 
   const HistoryCard({
     super.key,
@@ -378,6 +379,7 @@ class HistoryCard extends StatelessWidget {
     required this.status,
     required this.statusColor,
     required this.backgroundColor,
+    this.approverName,
   });
 
   @override
@@ -449,6 +451,7 @@ class HistoryCard extends StatelessWidget {
                               ),
                             ],
                           ),
+
                           const SizedBox(height: 4),
                           Row(
                             children: [

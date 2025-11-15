@@ -3,9 +3,9 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
 
-import 'bookrequest.dart';
-import 'check.dart';
-import 'history.dart';
+import '../student/bookrequest.dart';
+import '../student/check.dart';
+import '../student/history.dart';
 import 'profile.dart';
 
 const Color primaryBlue = Color(0xFF1976D2);
@@ -209,7 +209,7 @@ class HomeScreenContent extends StatefulWidget {
 
 class _HomeScreenContentState extends State<HomeScreenContent> {
   late Future<List<dynamic>> _roomsFuture;
-  final String serverIp = '172.25.57.119';
+  final String serverIp = '172.27.9.232';
 
   @override
   void initState() {
