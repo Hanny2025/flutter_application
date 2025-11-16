@@ -1,65 +1,105 @@
 import 'package:flutter/material.dart';
 import 'BottomNav.dart';
-import 'package:intl/intl.dart'; // สำหรับจัดรูปแบบวันที่
+import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
 
+// หน้านี้รับ requestData มาจากหน้า Lecturer_req
 class CheckPage extends StatelessWidget {
   final Map<String, dynamic>? requestData;
+
   const CheckPage({super.key, this.requestData});
 
-  // ข้อมูลตัวอย่าง
-  static final List<Map<String, String>> _sampleRequests = [
-    {
-      "roomName": "Family Deluxe Room",
-      "image": "Assets/imgs/room1.jpg",
-      "price": "1,250 bahts/day",
-      "username": "Username 1",
-      "date": "Apr 1, 2025",
-      "time": "08:00 - 10:00",
-    },
-  ];
+  // ใช้ IP เดียวกับหน้า Login (Android Emulator → 10.0.2.2)
+  static const String baseUrl = 'http://10.0.2.2:3000';
 
-  void _sendToHistory(BuildContext context, Map<String, dynamic> entry) {
-    final historyEntry = {
-      ...entry,
-      'actionAt': DateTime.now().toIso8601String(),
-    };
-    Navigator.pushReplacementNamed(
-      context,
-      '/history',
-      arguments: historyEntry,
-    );
+  // 🔹 เรียก API เพื่อเปลี่ยนสถานะ booking (approve / reject)
+  Future<void> _updateStatus(BuildContext context, String action) async {
+    final data = requestData;
+    if (data == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No booking data.')),
+      );
+      return;
+    }
+
+    // 👇 เปลี่ยนให้ตรงกับ field id ที่ backend ส่งมา
+    final bookingId = data['booking_id'] ?? data['id'];
+
+    if (bookingId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ไม่พบ booking_id ในข้อมูลที่ส่งมา')),
+      );
+      return;
+    }
+
+    // ตัวอย่าง endpoint:
+    //  POST /bookings/:id/approve
+    //  POST /bookings/:id/reject
+    final url = Uri.parse('$baseUrl/bookings/$bookingId/$action');
+
+    try {
+      final res = await http.post(url);
+
+      if (res.statusCode == 200) {
+        // ✅ สำเร็จ → กลับหน้า History ให้ FutureBuilder โหลดข้อมูลใหม่จาก DB
+        Navigator.pushReplacementNamed(context, '/history');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('อัปเดตสถานะไม่สำเร็จ (Code: ${res.statusCode})'),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้: $e'),
+        ),
+      );
+    }
+  }
+
+  // แปลงวันที่จาก string (ISO) → รูปแบบอ่านง่าย
+  String _formatDate(String? dateString) {
+    if (dateString == null) return 'No Date';
+    try {
+      return DateFormat('dd/MM/yyyy').format(DateTime.parse(dateString));
+    } catch (_) {
+      return dateString;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final data = requestData;
 
-    // เตรียมข้อมูลเริ่มต้น
-    String finalImage = 'Assets/imgs/room1.jpg';
-    String finalRoomName = 'No Name';
-    String finalPrice = 'No Price';
-    String finalUsername = 'No User';
-    String finalDate = 'No Date';
-    String finalTime = 'No Time';
-
-    if (data != null) {
-      finalImage = (data["image"] as String?) ?? 'Assets/imgs/room1.jpg';
-      finalRoomName = data["roomName"] ?? 'No Name';
-      finalPrice = (data["price"] != null)
-          ? '${data["price"]} THB/HOUR'
-          : 'No Price';
-      finalUsername = data["username"] ?? 'No User';
-      finalTime = data["time"] ?? 'No Time';
-
-      try {
-        if (data["date"] != null) {
-          final dateTime = DateTime.parse(data["date"]);
-          finalDate = DateFormat('dd/MM/yyyy').format(dateTime.toLocal());
-        }
-      } catch (e) {
-        finalDate = data["date"] ?? 'Invalid Date';
-      }
+    if (data == null) {
+      // ถ้าไม่มีข้อมูลส่งมา (ปกติจะไม่เกิดเพราะเราจะเข้าหน้านี้จาก Lecturer_req)
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF0D47A1),
+          centerTitle: true,
+          title: const Text(
+            'Check status',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+        ),
+        body: const Center(
+          child: Text('No booking selected.'),
+        ),
+        bottomNavigationBar: const AppBottomNavigationBar(currentIndex: 2),
+      );
     }
+
+    // ✅ เตรียมข้อมูลจาก requestData (key ให้ตรงกับที่ Lecturer_req ใช้)
+    final String image = (data['image'] as String?) ?? 'Assets/imgs/room1.jpg';
+    final String roomName = data['roomName'] ?? 'No Name';
+    final String price = (data['price'] != null)
+        ? '${data["price"]} THB/HOUR'
+        : 'No Price';
+    final String username = data['username'] ?? 'No User';
+    final String time = data['time'] ?? 'No Time';
+    final String date = _formatDate(data['date']);
 
     return Scaffold(
       appBar: AppBar(
@@ -72,51 +112,28 @@ class CheckPage extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(12),
-        child: data == null
-            ? ListView.separated(
-                itemCount: _sampleRequests.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, i) {
-                  final item = _sampleRequests[i];
-                  return _RequestCard(
-                    image: item['image']!,
-                    roomName: item['roomName']!,
-                    price: item['price']!,
-                    username: item['username']!,
-                    date: item['date']!,
-                    time: item['time']!,
-                    onApprove: () => _sendToHistory(context, {
-                      ...item,
-                      'status': 'approved',
-                    }),
-                    onReject: () => _sendToHistory(context, {
-                      ...item,
-                      'status': 'rejected',
-                    }),
-                  );
-                },
-              )
-            : SingleChildScrollView(
-                child: _RequestCard(
-                  image: finalImage,
-                  roomName: finalRoomName,
-                  price: finalPrice,
-                  username: finalUsername,
-                  date: finalDate,
-                  time: finalTime,
-                  onApprove: () =>
-                      _sendToHistory(context, {...data, 'status': 'approved'}),
-                  onReject: () =>
-                      _sendToHistory(context, {...data, 'status': 'rejected'}),
-                ),
-              ),
+        child: SingleChildScrollView(
+          child: _RequestCard(
+            image: image,
+            roomName: roomName,
+            price: price,
+            username: username,
+            date: date,
+            time: time,
+            // 🟢 กด Approve → call API /bookings/:id/approve
+            onApprove: () => _updateStatus(context, 'approve'),
+            // 🔴 กด Reject → call API /bookings/:id/reject
+            onReject: () => _updateStatus(context, 'reject'),
+          ),
+        ),
       ),
+      // ตอนนี้ใน BottomNav index 2 จะเด้งไป Dashboard อยู่แล้ว (เราแก้ไปก่อนหน้า)
       bottomNavigationBar: const AppBottomNavigationBar(currentIndex: 2),
     );
   }
 }
 
-/// การ์ดคำขอแต่ละรายการ
+/// การ์ดแสดงรายละเอียด booking + ปุ่ม Approve/Reject
 class _RequestCard extends StatelessWidget {
   final String image, roomName, price, username, date, time;
   final VoidCallback onApprove, onReject;
@@ -134,7 +151,7 @@ class _RequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Widget สำหรับแสดงรูปภาพ (รองรับทั้ง Asset / Network)
+    // Widget แสดงภาพ (รองรับทั้ง asset / network)
     final errorWidget = Container(
       width: 72,
       height: 72,
@@ -225,7 +242,7 @@ class _RequestCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
 
-          // ปุ่ม Approve/Reject
+          // ปุ่ม Approve / Reject
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [

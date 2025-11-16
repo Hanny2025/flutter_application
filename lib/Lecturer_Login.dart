@@ -40,7 +40,7 @@ class _LoginLecturerState extends State<LoginLecturer> {
       final username = _usernameController.text;
       final password = _passwordController.text;
 
-      final fullUrl = 'http://10.2.21.252:3000/login';
+      final fullUrl = 'http://10.0.2.2:3000/login';
       final body = jsonEncode({'username': username, 'password': password});
 
       final response = await http

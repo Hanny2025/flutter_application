@@ -22,10 +22,12 @@ class AppBottomNavigationBar extends StatelessWidget {
           case 1:
             Navigator.pushReplacementNamed(context, '/request');
             break;
+            
           case 2:
-            // push check page without data (CheckPage handles null)
-            Navigator.pushReplacementNamed(context, '/check');
+            // ใช้ Dashboard แทนหน้า Check
+            Navigator.pushReplacementNamed(context, '/');
             break;
+
           case 3:
             Navigator.pushReplacementNamed(context, '/history');
             break;
@@ -36,8 +38,11 @@ class AppBottomNavigationBar extends StatelessWidget {
       },
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.event_available), label: 'Requested'),
-        BottomNavigationBarItem(icon: Icon(Icons.check), label: 'Check'),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.event_available),
+          label: 'Requested',
+        ),
+        BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
         BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
         BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
       ],
