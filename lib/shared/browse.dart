@@ -140,7 +140,7 @@ class RoomCard extends StatelessWidget {
                               ],
                             ),
                           )
-                          .toList(),
+                          ,
                     ],
                   ),
                 ),
@@ -209,7 +209,7 @@ class HomeScreenContent extends StatefulWidget {
 
 class _HomeScreenContentState extends State<HomeScreenContent> {
   late Future<List<dynamic>> _roomsFuture;
-  final String serverIp = '172.27.9.232';
+  final String serverIp = '192.168.1.111';
 
   @override
   void initState() {

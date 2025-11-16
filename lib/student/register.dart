@@ -24,7 +24,7 @@ class _RegisterState extends State<Register> {
       TextEditingController();
 
   // <<< 3. เพิ่ม state สำหรับซ่อน/แสดงรหัสผ่าน (เหมือนหน้า Login)
-  bool _obscurePass = true;
+  final bool _obscurePass = true;
   bool _obscureConfirm = true;
 
   // <<< 4. เพิ่ม RegExp สำหรับกันภาษาไทย (เหมือนหน้า Login)
@@ -39,7 +39,7 @@ class _RegisterState extends State<Register> {
     try {
       // ✅ ส่งข้อมูลไปที่ Express server
       final url = Uri.parse(
-        'http://172.27.9.232:3000/register',
+        'http://192.168.1.111:3000/register',
       ); // เปลี่ยน IP ถ้าใช้มือถือ
       final response = await http.post(
         url,

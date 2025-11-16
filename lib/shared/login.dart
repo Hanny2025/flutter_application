@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_application/lecturer/Lecturer_DashBoard.dart';
 import 'package:flutter_application/shared/browse.dart';
 import 'package:flutter_application/student/register.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -42,7 +41,7 @@ class _LoginState extends State<Login> {
       final username = _usernameController.text;
       final password = _passwordController.text;
 
-      final fullUrl = 'http://172.27.9.232:3000/login';
+      final fullUrl = 'http://192.168.1.111:3000/login';
       final body = jsonEncode({'username': username, 'password': password});
 
       final response = await http

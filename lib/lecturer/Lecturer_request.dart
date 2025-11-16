@@ -39,7 +39,7 @@ class _Lecturer_reqState extends State<Lecturer_req> {
       });
     }
 
-    final url = Uri.parse('http://172.27.9.232:3000/bookings/pending');
+    final url = Uri.parse('http://192.168.1.111:3000/bookings/pending');
     try {
       final response = await http.get(url);
 

@@ -38,7 +38,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _fetchSummary() async {
-    const String apiUrl = 'http://172.27.9.232:3000/api/dashboard/summary';
+    const String apiUrl = 'http://192.168.1.111:3000/api/dashboard/summary';
 
     setStateIfMounted(() {
       _isLoading = true;
