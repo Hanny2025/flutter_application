@@ -1,199 +1,255 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/shared/login.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-// -----------------------------------------------------------------------------
-// 1. DATA MODEL & MOCK DATA (จำลองข้อมูลผู้ใช้และ Auth Service)
-// -----------------------------------------------------------------------------
+const Color primaryBlue = Color(0xFF1976D2);
+const Color lightBlueBackground = Color(0xFFE8F6FF);
+const Color darkGrey = Color(0xFF333333);
 
-class UserProfile {
-  final String id;
-  final String username;
-  final String position;
+class Profile extends StatefulWidget {
+  final String userId;
 
-  UserProfile({
-    required this.id,
-    required this.username,
-    required this.position,
-  });
-}
-
-// -----------------------------------------------------------------------------
-// 2. USER SCREEN UI
-// -----------------------------------------------------------------------------
-
-class UserScreen extends StatefulWidget {
-  const UserScreen({super.key});
+  const Profile({super.key, required this.userId});
 
   @override
-  State<UserScreen> createState() => _UserScreenState();
+  State<Profile> createState() => _ProfileState();
 }
 
-class _UserScreenState extends State<UserScreen> {
-  // สถานะสำหรับเก็บข้อมูลผู้ใช้ที่ดึงมาจากฐานข้อมูล (จำลอง)
-  UserProfile? _userProfile;
-  bool _isLoading = true;
+class _ProfileState extends State<Profile> {
+  Map<String, dynamic>? userData;
+  bool isLoading = true;
+  String errorMessage = '';
 
   @override
   void initState() {
     super.initState();
-    _fetchUserData(); // เริ่มดึงข้อมูลเมื่อหน้าจอถูกสร้าง
+    fetchUserData();
   }
 
-  // **จำลองการดึงข้อมูลผู้ใช้จาก Database**
-  // ในการใช้งานจริง โค้ดส่วนนี้จะทำการเรียก API หรือ Firestore เพื่อดึงข้อมูล User
-  Future<void> _fetchUserData() async {
-    // กำหนดให้รอ 1 วินาที เพื่อจำลองการโหลดข้อมูล
-    await Future.delayed(const Duration(seconds: 1));
-
-    setState(() {
-      // ข้อมูลผู้ใช้จำลอง (Mock data)
-      _userProfile = UserProfile(
-        id: '2025001',
-        username: 'Somchai Thepnakorn',
-        position: 'Admin', // หรือ 'User'
+  Future<void> fetchUserData() async {
+    try {
+      final response = await http.get(
+        Uri.parse("http://172.27.9.232:3000/get_user?user_id=${widget.userId}"),
       );
-      _isLoading = false;
-    });
+
+      print("Response status: ${response.statusCode}");
+      print("Response body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          userData = data;
+          isLoading = false;
+          errorMessage = '';
+        });
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? "Failed to load user data");
+      }
+    } catch (e) {
+      print("Error fetching user: $e");
+      setState(() {
+        isLoading = false;
+        errorMessage = e.toString();
+      });
+    }
   }
 
-  // **จำลองการ Log Out**
-  // ในการใช้งานจริง โค้ดส่วนนี้จะเรียก Firebase Auth หรือ API เพื่อทำการ Sign Out
   void _handleLogout() {
-    // 1. แสดงผลใน console ว่ากำลังจะ Log out
-    debugPrint('*** LOG OUT INITIATED ***');
+    _showLogoutDialog(context);
+  }
 
-    // 2. แสดง Dialog ยืนยัน
+  void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirm Logout'),
-        content: const Text('Are you sure you want to log out?'),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(context), // ปิด Dialog
-            child: const Text('Cancel'),
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          ElevatedButton(
-            onPressed: () {
-              // 3. ทำการ Log out (จำลอง)
-              debugPrint('User Logged Out Successfully!');
-
-              // สำหรับ Mock: ปิดหน้า UserScreen 2 ครั้งเพื่อกลับไปหน้า Dashboard หลัก (Home)
-              Navigator.of(context).pop(); // ปิด Dialog
-              // ปิดหน้า UserScreen (กลับไปหน้าหลัก) - ต้องแน่ใจว่ากลับไปที่ Root
-              if (Navigator.canPop(context)) {
-                Navigator.of(context).pop();
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+          title: const Text(
+            'Confirm Logout',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text('Are you sure you want to log out?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
             ),
-            child: const Text('Log Out'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Widget สำหรับแสดงบัตรข้อมูลผู้ใช้
-  Widget _buildProfileCard() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    // ใช้ข้อมูลที่ดึงมาแล้ว
-    final user = _userProfile!;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 4,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF0F8FF), // สีฟ้าอ่อนตามรูปภาพ
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Icon(Icons.person, size: 50, color: Colors.black54),
-            const SizedBox(width: 20),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'ID: ${user.id}',
-                  style: const TextStyle(fontSize: 16, color: Colors.black87),
-                ),
-                Text(
-                  'Username: ${user.username}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                Text(
-                  'Position: ${user.position}',
-                  style: const TextStyle(fontSize: 16, color: Colors.black54),
-                ),
-              ],
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const Login()),
+                  (route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text(
+                'Log Out',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  // Widget สำหรับปุ่ม Log Out
-  Widget _buildLogoutButton() {
-    return InkWell(
-      onTap: _handleLogout, // เรียกฟังก์ชัน Log Out
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.logout, color: Colors.red, size: 28),
-                const SizedBox(width: 16),
-                const Text(
-                  'Log Out',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.red,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const Icon(Icons.chevron_right, color: Colors.grey),
-          ],
-        ),
-      ),
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('User')),
-      // ไม่ต้องใส่ BottomNavigationBar ที่นี่ เพราะจะนำทางไปที่หน้าใหม่
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            // 1. บัตรข้อมูลผู้ใช้ (ID, Username, Position)
-            _buildProfileCard(),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        toolbarHeight: 100,
+        backgroundColor: primaryBlue,
+        centerTitle: true,
+        title: const Text(
+          'User',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : errorMessage.isNotEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Error: $errorMessage",
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: fetchUserData,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            )
+          : userData == null
+          ? const Center(child: Text("No user data found"))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  UserProfileCard(
+                    userId: userData!['User_id'].toString(),
+                    username: userData!['username'],
+                    position: userData!['role'],
+                  ),
+                  const SizedBox(height: 30),
+                  LogoutTile(onTap: _handleLogout),
+                ],
+              ),
+            ),
+    );
+  }
+}
 
-            const Divider(), // เส้นแบ่ง
-            // 2. ปุ่ม Log Out
-            _buildLogoutButton(),
+class UserProfileCard extends StatelessWidget {
+  final String userId;
+  final String username;
+  final String position;
 
-            const Divider(),
+  const UserProfileCard({
+    super.key,
+    required this.userId,
+    required this.username,
+    required this.position,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24.0),
+      decoration: BoxDecoration(
+        color: lightBlueBackground,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.person_pin, size: 60, color: primaryBlue),
+          const SizedBox(width: 20),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'ID: $userId',
+                style: const TextStyle(fontSize: 16, color: darkGrey),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Username: $username',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: darkGrey,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Position: $position',
+                style: const TextStyle(fontSize: 16, color: darkGrey),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class LogoutTile extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const LogoutTile({super.key, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 15.0),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: Colors.grey, width: 0.5)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: const [
+                Icon(Icons.logout, color: Colors.red, size: 28),
+                SizedBox(width: 15),
+                Text(
+                  'Log Out',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.red,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            const Icon(Icons.arrow_forward_ios, color: Colors.red, size: 20),
           ],
         ),
       ),

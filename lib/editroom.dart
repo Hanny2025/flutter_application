@@ -23,7 +23,7 @@ class _EditRoomListPageState extends State<EditRoomListPage> {
 
   Future<void> _fetchRooms() async {
     try {
-      final response = await http.get(Uri.parse('http://26.122.43.191/staff/rooms'));
+      final response = await http.get(Uri.parse('http://26.122.43.191:3000/staff/rooms'));
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -303,7 +303,7 @@ class _EditRoomPageState extends State<EditRoomPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://26.122.43.191/staff/edit_room'),
+        Uri.parse('http://26.122.43.19:3000/staff/edit_room'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           "Room_id": widget.roomData["Room_id"],

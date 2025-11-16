@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
       ),
 
       // 🏠 หน้าเริ่มต้น
-      initialRoute: '/login',
+      initialRoute: '/editRoom',
 
       // 🗺️ เส้นทางทั้งหมดในแอป
       routes: {
@@ -35,7 +35,6 @@ class MyApp extends StatelessWidget {
         '/manage': (context) => const ManageBooking(),
         '/addRoom': (context) => const AddRoomPage(),
         '/editRoom': (context) => const EditRoomListPage(),
-        '/history': (context) => const BookingHistoryPage(),
         '/dashboard': (context) => const DashboardPage(),
       },
     );
