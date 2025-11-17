@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/shared/login.dart';
+import 'package:flutter_application/shared/login.dart'; // ตรวจสอบว่า path นี้ถูกต้อง
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -9,8 +9,10 @@ const Color darkGrey = Color(0xFF333333);
 
 class Profile extends StatefulWidget {
   final String userId;
+  // เพิ่ม userRole เพื่อใช้ในการนำทางกลับ (ถ้าจำเป็น)
+  final String? userRole; 
 
-  const Profile({super.key, required this.userId});
+  const Profile({super.key, required this.userId, this.userRole});
 
   @override
   State<Profile> createState() => _ProfileState();
@@ -19,7 +21,8 @@ class Profile extends StatefulWidget {
 class _ProfileState extends State<Profile> {
   Map<String, dynamic>? userData;
   bool isLoading = true;
-  String errorMessage = '';
+  String? errorMessage; 
+  final String _baseUrl = 'http://172.27.9.232:3000'; 
 
   @override
   void initState() {
@@ -28,31 +31,40 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<void> fetchUserData() async {
+    if (!mounted) return;
+    
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
     try {
       final response = await http.get(
-        Uri.parse("http://172.27.9.232:3000/get_user?user_id=${widget.userId}"),
-      );
+        Uri.parse("$_baseUrl/get_user?user_id=${widget.userId}"),
+      ).timeout(const Duration(seconds: 10));
 
       print("Response status: ${response.statusCode}");
-      print("Response body: ${response.body}");
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        setState(() {
-          userData = data;
-          isLoading = false;
-          errorMessage = '';
-        });
+        if (mounted) {
+          setState(() {
+            userData = data;
+            isLoading = false;
+          });
+        }
       } else {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? "Failed to load user data");
+        throw Exception(errorData['message'] ?? "Failed to load user data (Code: ${response.statusCode})");
       }
     } catch (e) {
       print("Error fetching user: $e");
-      setState(() {
-        isLoading = false;
-        errorMessage = e.toString();
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          errorMessage = "Error connecting or parsing data: ${e.toString()}";
+        });
+      }
     }
   }
 
@@ -80,7 +92,7 @@ class _ProfileState extends State<Profile> {
             ),
             ElevatedButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(context); 
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const Login()),
@@ -99,16 +111,28 @@ class _ProfileState extends State<Profile> {
     );
   }
 
+  // 💡 ฟังก์ชันสำหรับการนำทางกลับ (สามารถปรับ route ได้ตามที่คุณใช้)
+  void _goBack() {
+    // ⭐️ นำทางไปยังหน้า Dashboard หรือหน้าหลัก
+    Navigator.pop(context); 
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        // 💡 เพิ่ม Leading icon สำหรับนำทางกลับ
+        automaticallyImplyLeading: false, 
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: _goBack,
+          tooltip: 'Back',
+        ),
         toolbarHeight: 100,
         backgroundColor: primaryBlue,
         centerTitle: true,
         title: const Text(
-          'User',
+          'User Profile',
           style: TextStyle(
             color: Colors.white,
             fontSize: 24,
@@ -116,42 +140,63 @@ class _ProfileState extends State<Profile> {
           ),
         ),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : errorMessage.isNotEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "Error: $errorMessage",
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: fetchUserData,
-                    child: const Text('Retry'),
-                  ),
-                ],
+      body: RefreshIndicator( // 💡 เพิ่ม RefreshIndicator
+        onRefresh: fetchUserData,
+        child: _buildBodyContent(),
+      ),
+    );
+  }
+
+  Widget _buildBodyContent() {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator(color: primaryBlue));
+    }
+
+    if (errorMessage != null) {
+      return Center(
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(), 
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red, size: 50),
+              const SizedBox(height: 10),
+              Text(
+                "Failed to load profile.\nError: $errorMessage",
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.red, fontSize: 16),
               ),
-            )
-          : userData == null
-          ? const Center(child: Text("No user data found"))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  UserProfileCard(
-                    userId: userData!['User_id'].toString(),
-                    username: userData!['username'],
-                    position: userData!['role'],
-                  ),
-                  const SizedBox(height: 30),
-                  LogoutTile(onTap: _handleLogout),
-                ],
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: fetchUserData,
+                child: const Text('Retry Fetch'),
               ),
-            ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (userData == null) {
+      return const Center(child: Text("No user data found"));
+    }
+    
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          UserProfileCard(
+            userId: userData!['User_id'].toString(),
+            username: userData!['username'],
+            position: userData!['role'] ?? 'N/A',
+          ),
+          const SizedBox(height: 30),
+          LogoutTile(onTap: _handleLogout),
+        ],
+      ),
     );
   }
 }
@@ -189,28 +234,30 @@ class UserProfileCard extends StatelessWidget {
         children: [
           const Icon(Icons.person_pin, size: 60, color: primaryBlue),
           const SizedBox(width: 20),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'ID: $userId',
-                style: const TextStyle(fontSize: 16, color: darkGrey),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Username: $username',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: darkGrey,
+          Expanded( 
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ID: $userId',
+                  style: const TextStyle(fontSize: 16, color: darkGrey),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Position: $position',
-                style: const TextStyle(fontSize: 16, color: darkGrey),
-              ),
-            ],
+                const SizedBox(height: 4),
+                Text(
+                  'Username: $username',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: darkGrey,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Position: $position',
+                  style: const TextStyle(fontSize: 16, color: darkGrey),
+                ),
+              ],
+            ),
           ),
         ],
       ),
