@@ -24,7 +24,7 @@ class _RegisterState extends State<Register> {
       TextEditingController();
 
   // <<< 3. เพิ่ม state สำหรับซ่อน/แสดงรหัสผ่าน (เหมือนหน้า Login)
-  bool _obscurePass = true;
+  final bool _obscurePass = true;
   bool _obscureConfirm = true;
 
   // <<< 4. เพิ่ม RegExp สำหรับกันภาษาไทย (เหมือนหน้า Login)

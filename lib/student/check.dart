@@ -84,7 +84,7 @@ class _CheckState extends State<Check> {
       return DateFormat('MMM d, yyyy').format(localDate);
     } catch (e) {
       // ในกรณีที่สตริงเป็นแค่ "YYYY-MM-DD" ที่ไม่มีเวลา
-      if (dateStr!.length <= 10) {
+      if (dateStr.length <= 10) {
         // ให้ใช้ DateFormat.yMMMd() เพื่อจัดการกับสตริงวันที่เท่านั้น
         try {
           final DateTime dateOnly = DateFormat('yyyy-MM-dd').parse(dateStr);

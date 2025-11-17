@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_application/lecturer/Lecturer_DashBoard.dart';
 import 'package:flutter_application/shared/browse.dart';
 import 'package:flutter_application/student/register.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_application/staff/dashboard.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -42,7 +42,7 @@ class _LoginState extends State<Login> {
       final username = _usernameController.text;
       final password = _passwordController.text;
 
-      final fullUrl = 'http://172.27.9.232:3000/login';
+      final fullUrl = 'http://192.168.1.36:3000/login';
       final body = jsonEncode({'username': username, 'password': password});
 
       final response = await http
@@ -64,38 +64,41 @@ class _LoginState extends State<Login> {
         if (data['user'] != null && data['user']['User_id'] != null) {
           final userId = data['user']['User_id'].toString();
           final username = data['user']['username'];
-          final userRole =
-              data['user']['role']?.toString() ?? 'Users'; // ✅ ดึง role
+          final userRole =data['user']['role']?.toString() ?? 'Users'; // ✅ ดึง role
 
           // บันทึกข้อมูลลง SharedPreferences
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('user_name', username);
-          // (แนะนำ) บันทึก user_id (String) ไว้ด้วยเลยก็ได้ครับ
           await prefs.setString('user_id', userId);
-          // 🔺 --- END: ส่วนที่ต้องเพิ่ม ---
+          await prefs.setString('user_role', userRole);
 
           print(
             ' Navigating to Browse with userId: $userId, username: $username, role: $userRole',
           );
-
+          final lowerRole = userRole.toLowerCase();
           // 2. ตรวจสอบค่า userRole
-          if (userRole.toLowerCase() == 'lecturer') {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    Browse_Lecturer(userId: userId, userRole: userRole),
-              ),
-            );
-          } else {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    Browse(userId: userId, userRole: userRole),
-              ),
-            );
-          }
+          if (lowerRole == 'lecturer') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => Browse_Lecturer(userId: userId, userRole: userRole),
+            ),
+          );
+        } else if (lowerRole == 'student') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => Browse(userId: userId, userRole: userRole),
+            ),
+          );
+        } else if (lowerRole == 'staff') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DashboardPage_Staff(userID: userId, userRole: userRole),
+            ),
+          );
+        }
         } else {
           print(' User data missing in response');
           _showErrorSnackBar('Login successful but user data is missing');

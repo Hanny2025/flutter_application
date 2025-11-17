@@ -9,7 +9,7 @@ class ManageBooking extends StatefulWidget {
 
 class _ManageBookingState extends State<ManageBooking> {
   // ตั้ง tab ที่เลือกอยู่ (ให้ Home = 0 ตามไอคอนภาพ)
-  int _currentIndex = 1;
+  final int _currentIndex = 1;
 
   void _onNavTap(int i) {
     if (i == _currentIndex) return;

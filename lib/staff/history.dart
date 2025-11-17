@@ -1,26 +1,50 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/staff/dashboard.dart';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
+// ⭐️ [เพิ่ม] Imports สำหรับการนำทาง
+import 'addroom.dart';
+import 'browse_room.dart';
+import 'editroom.dart';
+
 // ----------------------------------------
 // ## 📅 HistoryPage (หน้าประวัติการจอง)
 // ----------------------------------------
-class HistoryPage extends StatefulWidget {
-  final String userId;
 
-  const HistoryPage({super.key, required this.userId});
+// ⭐️ [แก้ไข] เปลี่ยน Parameter ให้รับ userID และ userRole
+class HistoryPage extends StatefulWidget {
+  final String userID;
+  final String userRole;
+
+  const HistoryPage({
+    super.key,
+    required this.userID,
+    required this.userRole,
+  });
 
   @override
   State<HistoryPage> createState() => _HistoryPageState();
 }
 
 class _HistoryPageState extends State<HistoryPage> {
+  final List<String> _pageTitles = [
+    'Rooms',      // Index 0
+    'Request',    // Index 1
+    'Check',      // Index 2
+    'History',    // Index 3
+    'Manage',     // Index 4 🆕 สำหรับ Staff
+    'User',       // Index 5
+  ];
   // --- Constants & State Variables ---
   String selectedFilter = 'All';
   String currentUserName = 'Loading...';
+
+  // ⭐️ [เพิ่ม] ตัวแปรสำหรับ BottomNavigationBar
+  int _currentIndex = 4; // 4 คือ 'History'
 
   // Base URL
   final String _baseUrl =
@@ -44,15 +68,21 @@ class _HistoryPageState extends State<HistoryPage> {
     // 🔍 ดึงชื่อผู้ใช้
     try {
       final prefs = await SharedPreferences.getInstance();
+      // ⭐️ [แก้ไข] ใช้ widget.userID จาก SharedPreferences (ถ้าจำเป็น)
+      // หรือดึงชื่อจาก prefs.getString('user_name') ตามโค้ดเดิม
       final String? userName = prefs.getString('user_name');
-      setState(() {
-        currentUserName = userName ?? 'Lecturer';
-      });
+      if (mounted) {
+        setState(() {
+          currentUserName = userName ?? 'Lecturer';
+        });
+      }
     } catch (e) {
       debugPrint('Error loading user name: $e');
-      setState(() {
-        currentUserName = 'Error Loading Name';
-      });
+      if (mounted) {
+        setState(() {
+          currentUserName = 'Error Loading Name';
+        });
+      }
     }
 
     // 🚀 ดึงประวัติการจอง
@@ -61,6 +91,8 @@ class _HistoryPageState extends State<HistoryPage> {
 
   // 2. ฟังก์ชันดึง History จาก API และทำการจัดเรียง 🔄
   Future<List<Map<String, dynamic>>> _fetchBookings() async {
+    // ⭐️ [ข้อสังเกต] API นี้ไม่ได้ใช้ widget.userID
+    // หากต้องการประวัติเฉพาะผู้ใช้ ต้องแก้ API endpoint
     final url = Uri.parse('$_baseUrl/staff/history');
     debugPrint('Fetching ALL history from: $url');
 
@@ -69,14 +101,11 @@ class _HistoryPageState extends State<HistoryPage> {
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
 
-        List<Map<String, dynamic>> bookings = data
-            .map((item) => item as Map<String, dynamic>)
-            .toList();
+        List<Map<String, dynamic>> bookings =
+            data.map((item) => item as Map<String, dynamic>).toList();
 
-        // ✅ **แก้ไข: จัดเรียงตามเวลาที่รายการถูกสร้าง (created_at) หรือดำเนินการ (action_at) ล่าสุด**
-        // 💡 หากไม่มีฟิลด์ 'created_at' หรือ 'action_at' จะย้อนกลับไปใช้ 'booking_date' แทน
+        // ✅ จัดเรียงตามเวลาที่รายการถูกสร้าง (created_at)
         bookings.sort((a, b) {
-          // ดึงค่า timestamp ที่น่าจะถูกต้องที่สุด
           final timestampA =
               a['created_at'] ?? a['action_at'] ?? a['booking_date'] ?? '';
           final timestampB =
@@ -85,7 +114,6 @@ class _HistoryPageState extends State<HistoryPage> {
           final dateA = DateTime.tryParse(timestampA) ?? DateTime(1970);
           final dateB = DateTime.tryParse(timestampB) ?? DateTime(1970);
 
-          // การเปรียบเทียบ: b.compareTo(a) สำหรับการเรียงจากมากไปน้อย (ล่าสุดไปเก่าสุด)
           return dateB.compareTo(dateA);
         });
 
@@ -113,19 +141,12 @@ class _HistoryPageState extends State<HistoryPage> {
   // ### 🛠️ Helper Functions
   // ------------------------------------
 
-  // 1. Format วันที่ (แก้ไขเวอร์ชัน)
+  // 1. Format วันที่
   String _formatDate(String? dateString) {
     if (dateString == null) return 'N/A';
     try {
-      // แยกส่วนวันที่และเวลาเพื่อป้องกัน timezone issues
       DateTime dateTime = DateTime.parse(dateString);
-
-      // ใช้ local timezone ของ device
       dateTime = dateTime.toLocal();
-
-      // หรือถ้าต้องการให้เป็นเวลาไทยโดยเฉพาะ
-      // dateTime = dateTime.add(const Duration(hours: 7));
-
       return DateFormat('d MMM yyyy').format(dateTime);
     } catch (e) {
       debugPrint('Date parsing error: $e for date: $dateString');
@@ -133,19 +154,16 @@ class _HistoryPageState extends State<HistoryPage> {
     }
   }
 
-  // 2. กำหนดสีตามสถานะการดำเนินการ
+  // 2. กำหนดสีตามสถานะ
   Color _getStatusColor(String? action) {
     if (action == null) return Colors.orangeAccent.shade100;
-
     final normalizedAction = action.toLowerCase();
-
     if (normalizedAction == 'approved') {
       return Colors.greenAccent.shade100;
     }
     if (normalizedAction == 'rejected' || normalizedAction == 'cancelled') {
       return Colors.redAccent.shade100;
     }
-    // สำหรับ 'pending' หรือสถานะอื่น ๆ
     return Colors.orangeAccent.shade100;
   }
 
@@ -156,8 +174,7 @@ class _HistoryPageState extends State<HistoryPage> {
   // Widget สำหรับ Filter Button
   Widget _buildFilterButton(String label) {
     final bool isSelected = selectedFilter == label;
-    final String displayLabel = label
-        .toUpperCase(); // ทำให้ตัวใหญ่เพื่อความสวยงาม
+    final String displayLabel = label.toUpperCase();
 
     return Expanded(
       child: ElevatedButton.icon(
@@ -166,7 +183,6 @@ class _HistoryPageState extends State<HistoryPage> {
             selectedFilter = label;
           });
         },
-        // Icon สำหรับสถานะที่ถูกเลือก
         icon: isSelected
             ? const Icon(Icons.check, color: Colors.black, size: 18)
             : const SizedBox.shrink(),
@@ -179,11 +195,8 @@ class _HistoryPageState extends State<HistoryPage> {
           ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected
-              ? Colors
-                    .lightBlue
-                    .shade200 // ใช้สีฟ้าอ่อนเมื่อถูกเลือก
-              : Colors.grey.shade200,
+          backgroundColor:
+              isSelected ? Colors.lightBlue.shade200 : Colors.grey.shade200,
           foregroundColor: Colors.black,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -244,7 +257,7 @@ class _HistoryPageState extends State<HistoryPage> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  action.toUpperCase(), // แสดงสถานะเป็นตัวพิมพ์ใหญ่
+                  action.toUpperCase(),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
@@ -282,11 +295,104 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
+  // ⭐️ [เพิ่ม] ฟังก์ชันสำหรับ BottomNavigationBar
+  void _onItemTapped(int index) {
+    if (index == _currentIndex) {
+      return; // ไม่ต้องทำอะไรถ้าเลือกแท็บเดิม
+    }
+
+    setState(() {
+      _currentIndex = index;
+    });
+
+    // Navigation ไปยังหน้าต่างๆ
+    switch (index) {
+      case 0: // Home
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Browse_Lecturer(
+              userId: widget.userID,
+              userRole: widget.userRole,
+            ),
+          ),
+        );
+        break;
+      case 1: // Edit
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EditRoomListPage(
+              userID: widget.userID,
+              userRole: widget.userRole,
+            ),
+          ),
+        );
+        break;
+      case 2: // Add
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AddRoomPage(
+              userID: widget.userID,
+              userRole: widget.userRole,
+            ),
+          ),
+        );
+        break;
+      case 3: // Dashboard
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DashboardPage_Staff(
+              userID: widget.userID,
+              userRole: widget.userRole,
+            ),
+          ),
+        );
+        break;
+      case 4: // History (หน้าปัจจุบัน)
+        break;
+      // case 5: // User
+      //   Navigator.pushReplacement(
+      //     context,
+      //     MaterialPageRoute(
+      //       builder: (context) => Profile(
+      //         userID: widget.userID,
+      //         userRole: widget.userRole,
+      //       ),
+      //     ),
+      //   );
+      //   break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // เพิ่ม Scaffold เพื่อให้มีโครงสร้างหน้าจอที่ถูกต้อง
       backgroundColor: const Color(0xFFE7F7FF), // lightPageBg (สีพื้นหลัง)
+      // ⭐️ [เพิ่ม] AppBar
+      appBar: AppBar(
+        title: const Text(
+          "History",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: const Color(0xFF1E63F3),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: refreshHistory, // ⭐️ เรียกฟังก์ชัน Refresh
+          ),
+        ],
+      ),
+
+      // โค้ด Body เดิมของคุณ (สมบูรณ์ดีแล้ว)
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -332,7 +438,12 @@ class _HistoryPageState extends State<HistoryPage> {
                 builder: (context, snapshot) {
                   // 1. Loading
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFF1E63F3)), // ⭐️ ปรับสี
+                      ),
+                    );
                   }
 
                   // 2. Error
@@ -342,15 +453,13 @@ class _HistoryPageState extends State<HistoryPage> {
 
                   final allBookings = snapshot.data ?? [];
 
-                  // 3. Filter ข้อมูลตามสถานะ
-                  List<Map<String, dynamic>> filteredBookings = allBookings
-                      .where((b) {
-                        if (selectedFilter == 'All') return true;
-                        // 💡 เปลี่ยนเป็น .toLowerCase() เพื่อให้ Filter ตรงกัน
-                        return (b['action'] as String?)?.toLowerCase() ==
-                            selectedFilter.toLowerCase();
-                      })
-                      .toList();
+                  // 3. Filter ข้อมูล
+                  List<Map<String, dynamic>> filteredBookings =
+                      allBookings.where((b) {
+                    if (selectedFilter == 'All') return true;
+                    return (b['action'] as String?)?.toLowerCase() ==
+                        selectedFilter.toLowerCase();
+                  }).toList();
 
                   // 4. No Data
                   if (filteredBookings.isEmpty) {
@@ -375,6 +484,25 @@ class _HistoryPageState extends State<HistoryPage> {
             ),
           ],
         ),
+      ),
+
+      // ⭐️ [เพิ่ม] BottomNavigationBar
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: const Color(0xFF1E63F3),
+        unselectedItemColor: Colors.grey,
+        currentIndex: _currentIndex,
+        onTap: _onItemTapped,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.edit), label: 'Edit'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.add_box_outlined), label: 'Add'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard), label: 'Dashboard'),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'User'),
+        ],
       ),
     );
   }

@@ -140,7 +140,7 @@ class RoomCard extends StatelessWidget {
                               ],
                             ),
                           )
-                          .toList(),
+                          ,
                     ],
                   ),
                 ),
@@ -431,7 +431,7 @@ class _BrowseState extends State<Browse> {
       HomeScreenContent(userId: widget.userId, userRole: widget.userRole),
       Check(userId: widget.userId),
       History(userId: widget.userId),
-      Profile(userId: widget.userId),
+      // Profile(userId: widget.userId),
     ];
   }
 
