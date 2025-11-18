@@ -166,7 +166,7 @@ class _EditRoomListPageState extends State<EditRoomListPage> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => Browse_Lecturer(
+            builder: (context) => Browse_Staff(
               userId: widget.userID,
               userRole: widget.userRole,
             ),

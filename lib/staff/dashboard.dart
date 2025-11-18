@@ -70,14 +70,14 @@ class _DashboardPage_StaffState extends State<DashboardPage_Staff> {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
 
-        final int totalSlots = data['totalSlots'] ?? 0;
+        final int totalRooms = data['totalRooms'] ?? 0;
         final int bookedSlotsToday = data['bookedSlotsToday'] ?? 0;
-        final int freeSlots = totalSlots - bookedSlotsToday;
+        final int freeRooms = totalRooms - bookedSlotsToday;
 
         setState(() {
           _dashboardData = {
-            'totalSlots': totalSlots,
-            'freeSlots': freeSlots > 0 ? freeSlots : 0, // กันค่าติดลบ
+            'totalRooms': totalRooms,
+            'freeRooms': data['freeRooms'] ?? 0, 
             'pendingSlots': data['pendingSlots'] ?? 0,
             'disabledRooms': data['disabledRooms'] ?? 0,
           };
@@ -162,14 +162,14 @@ class _DashboardPage_StaffState extends State<DashboardPage_Staff> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _buildInfoCard(
-                        _dashboardData['totalSlots'].toString(),
-                        "Total\nSlots",
+                        _dashboardData['totalRooms'].toString(),
+                        "Total\nRooms",
                         const Color(0xFF1E63F3),
                         Colors.white,
                       ),
                       _buildInfoCard(
-                        _dashboardData['freeSlots'].toString(),
-                        "Free\nSlots",
+                        _dashboardData['freeRooms'].toString(),
+                        "Free\nRooms",
                         const Color(0xFFDCE8FF),
                         Colors.black,
                       ),
@@ -256,7 +256,7 @@ class _DashboardPage_StaffState extends State<DashboardPage_Staff> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => Browse_Lecturer( // ⭐️ ไปที่หน้า Browse_Lecturer
+            builder: (context) => Browse_Staff( 
               userId: widget.userID,
               userRole: widget.userRole,
             ),

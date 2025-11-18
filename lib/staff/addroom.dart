@@ -309,7 +309,7 @@ String _detectImageType(List<int> bytes) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => Browse_Lecturer(
+            builder: (context) => Browse_Staff(
               userId: widget.userID,
               userRole: widget.userRole,
             ),
@@ -609,26 +609,7 @@ String _detectImageType(List<int> bytes) {
                           ],
                         ),
                       ),
-                      DropdownMenuItem(
-                        value: "Reserved",
-                        child: Row(
-                          children: [
-                            Icon(Icons.circle, color: Colors.orange, size: 15),
-                            SizedBox(width: 8),
-                            Text("Reserved"),
-                          ],
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: "Disabled",
-                        child: Row(
-                          children: [
-                            Icon(Icons.circle, color: Colors.red, size: 15),
-                            SizedBox(width: 8),
-                            Text("Disabled"),
-                          ],
-                        ),
-                      ),
+                     
                     ],
                     onChanged: (value) {
                       setState(() {
